@@ -31,6 +31,13 @@
             transform: scale(1.05);
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5);
         }
+        .predefined-crepe {
+            transition: all 0.3s ease;
+        }
+        .predefined-crepe:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen font-sans">
@@ -141,72 +148,127 @@
                 <p class="text-gray-600 max-w-2xl mx-auto">Create new orders and manage current ones</p>
             </div>
             
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Order Form -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
-                    <h3 class="text-xl font-semibold text-amber-800 mb-4">New Order</h3>
-                    
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">Customer Name</label>
-                        <input type="text" id="customer-name" placeholder="Enter customer name" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                    </div>
-                    
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">Phone Number</label>
-                        <input type="tel" id="customer-phone" placeholder="Enter phone number for notifications" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                    </div>
-                    
-                    <div id="crepes-container">
-                        <!-- Crepe items will be added here -->
-                    </div>
-                    
-                    <button id="add-crepe" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 py-2 rounded-lg font-medium transition mb-6">
-                        <i class="fas fa-plus mr-2"></i> Add Another Crêpe
-                    </button>
-                    
-                    <div class="border-t pt-4">
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-700 font-medium">Total:</span>
-                            <span class="text-xl font-bold text-amber-800" id="order-total">$0.00</span>
+            <!-- Cashier Login -->
+            <div id="cashier-login" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
+                <h3 class="text-xl font-semibold text-amber-800 mb-6 text-center">Cashier Login</h3>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Username</label>
+                    <input type="text" id="cashier-username" placeholder="Enter your username" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Password</label>
+                    <input type="password" id="cashier-password" placeholder="Enter password" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <button id="cashier-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition">
+                    Login
+                </button>
+            </div>
+            
+            <!-- Cashier Dashboard -->
+            <div id="cashier-dashboard" class="hidden">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Order Form -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                        <h3 class="text-xl font-semibold text-amber-800 mb-4">New Order</h3>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">Customer Name</label>
+                            <input type="text" id="customer-name" placeholder="Enter customer name" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                         </div>
-                        <button id="place-order" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition">
-                            Place Order
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">Phone Number</label>
+                            <input type="tel" id="customer-phone" placeholder="Enter phone number for notifications" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        
+                        <h4 class="font-medium text-gray-700 mb-3">Predefined Crêpes</h4>
+                        <div class="grid grid-cols-2 gap-3 mb-6">
+                            <div class="predefined-crepe bg-white border border-gray-200 rounded-lg p-3 cursor-pointer" 
+                                 data-name="Classic" data-price="5.50" data-toppings="Nutella">
+                                <div class="font-medium">Classic</div>
+                                <div class="text-sm text-gray-500">Nutella</div>
+                                <div class="text-amber-700 font-medium">$5.50</div>
+                            </div>
+                            <div class="predefined-crepe bg-white border border-gray-200 rounded-lg p-3 cursor-pointer" 
+                                 data-name="Berry Bliss" data-price="7.00" data-toppings="Strawberries, Blueberries, Whipped Cream">
+                                <div class="font-medium">Berry Bliss</div>
+                                <div class="text-sm text-gray-500">Strawberries, Blueberries, Whipped Cream</div>
+                                <div class="text-amber-700 font-medium">$7.00</div>
+                            </div>
+                            <div class="predefined-crepe bg-white border border-gray-200 rounded-lg p-3 cursor-pointer" 
+                                 data-name="Banana Split" data-price="6.75" data-toppings="Banana, Nutella, Whipped Cream">
+                                <div class="font-medium">Banana Split</div>
+                                <div class="text-sm text-gray-500">Banana, Nutella, Whipped Cream</div>
+                                <div class="text-amber-700 font-medium">$6.75</div>
+                            </div>
+                            <div class="predefined-crepe bg-white border border-gray-200 rounded-lg p-3 cursor-pointer" 
+                                 data-name="Caramel Dream" data-price="6.50" data-toppings="Caramel, Sea Salt, Whipped Cream">
+                                <div class="font-medium">Caramel Dream</div>
+                                <div class="text-sm text-gray-500">Caramel, Sea Salt, Whipped Cream</div>
+                                <div class="text-amber-700 font-medium">$6.50</div>
+                            </div>
+                        </div>
+                        
+                        <button id="add-custom-crepe" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 py-2 rounded-lg font-medium transition mb-6">
+                            <i class="fas fa-utensils mr-2"></i> Create Custom Crêpe
                         </button>
+                        
+                        <div id="crepes-container">
+                            <!-- Crepe items will be added here -->
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-700 font-medium">Total:</span>
+                                <span class="text-xl font-bold text-amber-800" id="order-total">$0.00</span>
+                            </div>
+                            <button id="place-order" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition">
+                                Place Order
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Orders -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                        <h3 class="text-xl font-semibold text-amber-800 mb-4">Active Orders</h3>
+                        
+                        <div class="overflow-y-auto max-h-96 space-y-4" id="active-orders">
+                            <!-- Order cards will be added here -->
+                            <div class="order-card bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span class="font-medium">Order #1001</span>
+                                        <span class="text-sm text-gray-500 ml-2">(John Doe)</span>
+                                    </div>
+                                    <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">Preparing</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-2">2 crêpes • $14.50</div>
+                                <div class="text-xs text-gray-500">Placed 5 minutes ago</div>
+                            </div>
+                            
+                            <div class="order-card bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span class="font-medium">Order #1002</span>
+                                        <span class="text-sm text-gray-500 ml-2">(Jane Smith)</span>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Ready</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-2">1 crêpe • $7.25</div>
+                                <div class="text-xs text-gray-500">Placed 12 minutes ago</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Current Orders -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
-                    <h3 class="text-xl font-semibold text-amber-800 mb-4">Active Orders</h3>
-                    
-                    <div class="overflow-y-auto max-h-96 space-y-4" id="active-orders">
-                        <!-- Order cards will be added here -->
-                        <div class="order-card bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="font-medium">Order #1001</span>
-                                    <span class="text-sm text-gray-500 ml-2">(John Doe)</span>
-                                </div>
-                                <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">Preparing</span>
-                            </div>
-                            <div class="text-sm text-gray-600 mb-2">2 crêpes • $14.50</div>
-                            <div class="text-xs text-gray-500">Placed 5 minutes ago</div>
-                        </div>
-                        
-                        <div class="order-card bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="font-medium">Order #1002</span>
-                                    <span class="text-sm text-gray-500 ml-2">(Jane Smith)</span>
-                                </div>
-                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Ready</span>
-                            </div>
-                            <div class="text-sm text-gray-600 mb-2">1 crêpe • $7.25</div>
-                            <div class="text-xs text-gray-500">Placed 12 minutes ago</div>
-                        </div>
-                    </div>
+                <div class="mt-6 text-center">
+                    <button id="cashier-logout-btn" class="text-amber-600 hover:text-amber-700 font-medium">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </button>
                 </div>
             </div>
         </div>
@@ -226,7 +288,7 @@
                     <h3 class="text-xl font-semibold text-amber-800 mb-6 text-center">Station Login</h3>
                     <div class="mb-4">
                         <label class="block text-gray-700 font-medium mb-2">Station Number</label>
-                        <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        <select id="station-number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             <option value="1">Station 1</option>
                             <option value="2">Station 2</option>
                             <option value="3">Station 3</option>
@@ -234,7 +296,7 @@
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-700 font-medium mb-2">Password</label>
-                        <input type="password" placeholder="Enter password" 
+                        <input type="password" id="maker-password" placeholder="Enter password" 
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                     </div>
                     <button id="maker-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition">
@@ -247,7 +309,7 @@
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-semibold text-amber-800">Current Order</h3>
                         <div class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                            Station <span id="station-number">1</span>
+                            Station <span id="station-number-display">1</span>
                         </div>
                     </div>
                     
@@ -273,7 +335,7 @@
                                          class="object-cover h-full w-full">
                                     <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                                         <div class="bg-white bg-opacity-90 p-4 rounded-lg max-w-xs text-center">
-                                            <h4 class="font-medium mb-2">Custom Crêpe</h4>
+                                            <h4 class="font-medium mb-2" id="crepe-name-display">Custom Crêpe</h4>
                                             <ul class="text-sm text-gray-700" id="toppings-list">
                                                 <li>• Nutella</li>
                                                 <li>• Strawberries</li>
@@ -320,12 +382,12 @@
                     <h3 class="text-xl font-semibold text-amber-800 mb-6 text-center">Owner Login</h3>
                     <div class="mb-6">
                         <label class="block text-gray-700 font-medium mb-2">Username</label>
-                        <input type="text" placeholder="Enter username" 
+                        <input type="text" id="owner-username" placeholder="Enter username" 
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                     </div>
                     <div class="mb-6">
                         <label class="block text-gray-700 font-medium mb-2">Password</label>
-                        <input type="password" placeholder="Enter password" 
+                        <input type="password" id="owner-password" placeholder="Enter password" 
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                     </div>
                     <button id="owner-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition">
@@ -383,9 +445,6 @@
                             <div class="mb-6">
                                 <div class="flex justify-between items-center mb-3">
                                     <h5 class="font-medium text-gray-700">Cashiers</h5>
-                                    <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">
-                                        <i class="fas fa-plus mr-1"></i> Add
-                                    </button>
                                 </div>
                                 <ul class="space-y-2">
                                     <li class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -393,9 +452,6 @@
                                         <div class="flex space-x-2">
                                             <button class="text-amber-600 hover:text-amber-700 text-sm">
                                                 <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-red-500 hover:text-red-600 text-sm">
-                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
                                     </li>
@@ -405,9 +461,6 @@
                                             <button class="text-amber-600 hover:text-amber-700 text-sm">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="text-red-500 hover:text-red-600 text-sm">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
                                         </div>
                                     </li>
                                 </ul>
@@ -416,9 +469,6 @@
                             <div>
                                 <div class="flex justify-between items-center mb-3">
                                     <h5 class="font-medium text-gray-700">Crêpe Makers</h5>
-                                    <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">
-                                        <i class="fas fa-plus mr-1"></i> Add
-                                    </button>
                                 </div>
                                 <ul class="space-y-2">
                                     <li class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -427,9 +477,6 @@
                                             <button class="text-amber-600 hover:text-amber-700 text-sm">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="text-red-500 hover:text-red-600 text-sm">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
                                         </div>
                                     </li>
                                     <li class="flex justify-between items-center py-2 border-b border-gray-100">
@@ -437,9 +484,6 @@
                                         <div class="flex space-x-2">
                                             <button class="text-amber-600 hover:text-amber-700 text-sm">
                                                 <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-red-500 hover:text-red-600 text-sm">
-                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
                                     </li>
@@ -667,11 +711,11 @@
         // Sample data for orders
         let orders = [
             { id: 1001, customer: "John Doe", phone: "555-1234", status: "preparing", crepes: [
-                { base: "classic", toppings: ["nutella", "strawberries"], price: 7.25, instructions: "Extra nutella please" },
-                { base: "whole-wheat", toppings: ["banana", "caramel"], price: 7.25, instructions: "" }
+                { name: "Classic", base: "classic", toppings: ["nutella"], price: 5.50, instructions: "Extra nutella please" },
+                { name: "Berry Bliss", base: "whole-wheat", toppings: ["strawberries", "blueberries", "whipped cream"], price: 7.00, instructions: "" }
             ], timestamp: Date.now() - 300000 }, // 5 minutes ago
             { id: 1002, customer: "Jane Smith", phone: "555-5678", status: "ready", crepes: [
-                { base: "chocolate", toppings: ["whipped cream"], price: 7.25, instructions: "Light on the whipped cream" }
+                { name: "Banana Split", base: "chocolate", toppings: ["banana", "nutella", "whipped cream"], price: 6.75, instructions: "Light on the whipped cream" }
             ], timestamp: Date.now() - 720000 } // 12 minutes ago
         ];
 
@@ -680,12 +724,81 @@
         let selectedToppings = [];
         let selectedBase = null;
 
-        // Cashier functionality
-        document.getElementById('add-crepe').addEventListener('click', function() {
+        // Cashier login
+        document.getElementById('cashier-login-btn').addEventListener('click', function() {
+            const username = document.getElementById('cashier-username').value;
+            const password = document.getElementById('cashier-password').value;
+            
+            // Simple validation - in a real app, would check against database
+            if (username === "cashier" && password === "password123") {
+                document.getElementById('cashier-login').classList.add('hidden');
+                document.getElementById('cashier-dashboard').classList.remove('hidden');
+            } else {
+                alert("Invalid username or password");
+            }
+        });
+
+        // Cashier logout
+        document.getElementById('cashier-logout-btn').addEventListener('click', function() {
+            document.getElementById('cashier-login').classList.remove('hidden');
+            document.getElementById('cashier-dashboard').classList.add('hidden');
+            document.getElementById('cashier-username').value = '';
+            document.getElementById('cashier-password').value = '';
+        });
+
+        // Predefined crepe selection
+        document.querySelectorAll('.predefined-crepe').forEach(crepe => {
+            crepe.addEventListener('click', function() {
+                const name = this.dataset.name;
+                const price = parseFloat(this.dataset.price);
+                const toppings = this.dataset.toppings.split(', ');
+                
+                // Add to order immediately
+                const crepeItem = document.createElement('div');
+                crepeItem.className = 'bg-amber-50 rounded-lg p-4 mb-3';
+                crepeItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-medium">${name}</span>
+                            <span class="text-sm text-gray-600">$${price.toFixed(2)}</span>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 delete-crepe">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        ${toppings.length > 0 ? 'Toppings: ' + toppings.join(', ') : 'No toppings'}
+                    </div>
+                `;
+                
+                document.getElementById('crepes-container').appendChild(crepeItem);
+                
+                // Add delete functionality
+                crepeItem.querySelector('.delete-crepe').addEventListener('click', function() {
+                    crepeItem.remove();
+                    updateOrderTotal();
+                });
+                
+                // Update order total
+                updateOrderTotal();
+            });
+        });
+
+        // Add custom crepe
+        document.getElementById('add-custom-crepe').addEventListener('click', function() {
             // Reset selections
             selectedToppings = [];
             selectedBase = null;
             document.getElementById('crepe-price').textContent = '$0.00';
+            document.querySelector('#crepe-modal textarea').value = '';
+            
+            // Reset UI selections
+            document.querySelectorAll('.base-option').forEach(opt => {
+                opt.classList.remove('bg-amber-100', 'border-amber-500');
+            });
+            document.querySelectorAll('.topping-option').forEach(opt => {
+                opt.classList.remove('topping-selected', 'bg-amber-100', 'border-amber-500');
+            });
             
             // Show modal
             document.getElementById('crepe-modal').classList.remove('hidden');
@@ -740,6 +853,7 @@
             const instructions = document.querySelector('#crepe-modal textarea').value;
             
             currentCrepe = {
+                name: "Custom " + selectedBase.name + " Crêpe",
                 base: selectedBase.name.toLowerCase(),
                 toppings: selectedToppings,
                 price: parseFloat(document.getElementById('crepe-price').textContent.substring(1)),
@@ -752,7 +866,7 @@
             crepeItem.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
                     <div>
-                        <span class="font-medium">${selectedBase.name} Crêpe</span>
+                        <span class="font-medium">${currentCrepe.name}</span>
                         <span class="text-sm text-gray-600">$${currentCrepe.price.toFixed(2)}</span>
                     </div>
                     <button class="text-red-500 hover:text-red-700 delete-crepe">
@@ -808,15 +922,22 @@
             // Collect crepes data
             const crepes = [];
             crepeItems.forEach(item => {
-                const base = item.querySelector('.font-medium').textContent.replace(' Crêpe', '');
+                const name = item.querySelector('.font-medium').textContent;
                 const price = parseFloat(item.querySelector('span.text-sm').textContent.substring(1));
                 const toppingsText = item.querySelector('.text-sm').textContent.replace('Toppings: ', '');
                 const toppings = toppingsText !== 'No toppings' ? toppingsText.split(', ') : [];
                 const instructions = item.querySelector('.text-xs') ? 
                     item.querySelector('.text-xs').textContent.replace('Note: ', '') : '';
                 
+                // Determine base from name or default to classic
+                let base = "classic";
+                if (name.includes("Whole Wheat")) base = "whole-wheat";
+                if (name.includes("Gluten Free")) base = "gluten-free";
+                if (name.includes("Chocolate")) base = "chocolate";
+                
                 crepes.push({
-                    base: base.toLowerCase(),
+                    name: name,
+                    base: base,
                     toppings: toppings,
                     price: price,
                     instructions: instructions
@@ -868,142 +989,5 @@
                             ${order.status === 'ready' ? 'Ready' : 'Preparing'}
                         </span>
                     </div>
-                    <div class="text-sm text-gray-600 mb-2">${order.crepes.length} crêpe${order.crepes.length !== 1 ? 's' : ''} • $${total.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500">Placed ${orderTime} minute${orderTime !== 1 ? 's' : ''} ago</div>
-                `;
-                
-                container.appendChild(orderCard);
-            });
-        }
-
-        // Customer check status
-        document.getElementById('check-status').addEventListener('click', function() {
-            const orderNumber = parseInt(document.getElementById('order-number').value);
-            
-            if (isNaN(orderNumber)) {
-                alert('Please enter a valid order number');
-                return;
-            }
-            
-            const order = orders.find(o => o.id === orderNumber);
-            
-            if (!order) {
-                alert('Order not found. Please check your order number.');
-                return;
-            }
-            
-            // Display order info
-            document.getElementById('display-order-number').textContent = order.id;
-            document.getElementById('order-status').textContent = order.status === 'ready' ? 'Ready' : 'In Queue';
-            document.getElementById('orders-ahead').textContent = orders.filter(o => o.timestamp < order.timestamp && o.status !== 'ready').length;
-            document.getElementById('wait-time').textContent = `${order.crepes.length * 3} minutes`;
-            document.getElementById('crepe-count').textContent = order.crepes.length;
-            
-            // Update progress bar
-            const progress = order.status === 'ready' ? 100 : 30;
-            document.getElementById('progress-bar').style.width = `${progress}%`;
-            
-            // Show result
-            document.getElementById('status-result').classList.remove('hidden');
-            
-            // Check if ready notification should be shown
-            if (order.status === 'ready') {
-                document.getElementById('ready-notification').classList.remove('hidden');
-            } else {
-                document.getElementById('ready-notification').classList.add('hidden');
-            }
-        });
-
-        // Maker login
-        document.getElementById('maker-login-btn').addEventListener('click', function() {
-            // In a real app, would validate credentials here
-            document.getElementById('maker-login').classList.add('hidden');
-            document.getElementById('maker-dashboard').classList.remove('hidden');
-            updateMakerDashboard();
-        });
-
-        // Maker logout
-        document.getElementById('maker-logout').addEventListener('click', function() {
-            document.getElementById('maker-login').classList.remove('hidden');
-            document.getElementById('maker-dashboard').classList.add('hidden');
-        });
-
-        function updateMakerDashboard() {
-            const preparingOrders = orders.filter(o => o.status === 'preparing');
-            
-            if (preparingOrders.length === 0) {
-                document.getElementById('no-orders').classList.remove('hidden');
-                document.getElementById('order-display').classList.add('hidden');
-                return;
-            }
-            
-            // For demo purposes, just show the first preparing order
-            const order = preparingOrders[0];
-            const crepe = order.crepes[0]; // In real app, would track which crepe is being made
-            
-            document.getElementById('no-orders').classList.add('hidden');
-            document.getElementById('order-display').classList.remove('hidden');
-            
-            document.getElementById('maker-order-number').textContent = order.id;
-            document.getElementById('maker-customer-name').textContent = order.customer;
-            document.getElementById('crepe-number').textContent = '1';
-            document.getElementById('total-crepes').textContent = order.crepes.length;
-            
-            // Update toppings list
-            const toppingsList = document.getElementById('toppings-list');
-            toppingsList.innerHTML = '';
-            crepe.toppings.forEach(topping => {
-                const li = document.createElement('li');
-                li.textContent = `• ${topping}`;
-                toppingsList.appendChild(li);
-            });
-            
-            document.getElementById('special-instructions').textContent = crepe.instructions || 'None';
-        }
-
-        // Complete crepe
-        document.getElementById('complete-crepe').addEventListener('click', function() {
-            // In a real app, would mark this crepe as complete and move to next one
-            // For demo, we'll just mark the whole order as ready
-            const orderId = parseInt(document.getElementById('maker-order-number').textContent);
-            const order = orders.find(o => o.id === orderId);
-            
-            if (order) {
-                order.status = 'ready';
-                updateActiveOrders();
-                updateMakerDashboard();
-                
-                // In a real app, would send notification to customer here
-                console.log(`Notification sent to ${order.phone}: Your order is ready!`);
-            }
-        });
-
-        // Owner login
-        document.getElementById('owner-login-btn').addEventListener('click', function() {
-            // In a real app, would validate credentials here
-            document.getElementById('owner-login').classList.add('hidden');
-            document.getElementById('owner-dashboard').classList.remove('hidden');
-            
-            // Set current date
-            const today = new Date();
-            document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', { 
-                year: 'numeric', month: 'long', day: 'numeric' 
-            });
-        });
-
-        // Owner logout
-        document.getElementById('owner-logout').addEventListener('click', function() {
-            document.getElementById('owner-login').classList.remove('hidden');
-            document.getElementById('owner-dashboard').classList.add('hidden');
-        });
-
-        // Close crepe modal
-        document.getElementById('close-crepe-modal').addEventListener('click', function() {
-            document.getElementById('crepe-modal').classList.add('hidden');
-        });
-
-        // Initialize
-        updateActiveOrders();
-    </script>
-</body>
+                    <div class="text-sm text-gray-600 mb-2">${order.crepes.length} crêpe${order.crepes
 </html>

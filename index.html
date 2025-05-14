@@ -198,9 +198,11 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Username</label>
-                    <input type="text" id="cashier-username" placeholder="Enter your username" 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                    <form id="cashier-login-form" onsubmit="return false;">
+                        <label class="block text-gray-700 font-medium mb-2">Username</label>
+                        <input type="text" id="cashier-username" placeholder="Enter your username" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                    </form>
                 </div>
                 
                 <div class="mb-6">
@@ -322,24 +324,25 @@
                         <i class="fas fa-utensils text-4xl text-amber-600 mb-3"></i>
                         <h3 class="text-xl font-semibold text-amber-800">Station Login</h3>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Station Number</label>
-                        <select id="station-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                            <option value="1">Station 1</option>
-                            <option value="2">Station 2</option>
-                            <option value="3">Station 3</option>
-                        </select>
+                    <form id="owner-login-form" onsubmit="return false;">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">Station Number</label>
+                            <select id="station-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                <option value="1">Station 1</option>
+                                <option value="2">Station 2</option>
+                                <option value="3">Station 3</option>
+                            </select>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">Password</label>
+                            <input type="password" id="maker-password" placeholder="Enter password" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        <button id="maker-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition shadow-md">
+                            Login to Station
+                        </button>
                     </div>
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">Password</label>
-                        <input type="password" id="maker-password" placeholder="Enter password" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                    </div>
-                    <button id="maker-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition shadow-md">
-                        Login to Station
-                    </button>
-                </div>
-                
+                </form>
                 <!-- Maker Dashboard -->
                 <div id="maker-dashboard" class="hidden p-8">
                     <div class="flex justify-between items-center mb-6">
@@ -419,25 +422,27 @@
             
             <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
                 <!-- Login Form -->
-                <div id="owner-login" class="p-8">
-                    <div class="text-center mb-6">
-                        <i class="fas fa-user-tie text-4xl text-amber-600 mb-3"></i>
-                        <h3 class="text-xl font-semibold text-amber-800">Owner Login</h3>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">Username</label>
-                        <input type="text" id="owner-username" placeholder="Enter username" 
+                <form id="owner-login-form" onsubmit="return false;">
+                    <div id="owner-login" class="p-8">
+                        <div class="text-center mb-6">
+                            <i class="fas fa-user-tie text-4xl text-amber-600 mb-3"></i>
+                            <h3 class="text-xl font-semibold text-amber-800">Owner Login</h3>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">Username</label>
+                            <input type="text" id="owner-username" placeholder="Enter username" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-medium mb-2">Password</label>
+                            <input type="password" id="owner-password" placeholder="Enter password" 
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        <button id="owner-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition shadow-md">
+                            Login
+                        </button>
                     </div>
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">Password</label>
-                        <input type="password" id="owner-password" placeholder="Enter password" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                    </div>
-                    <button id="owner-login-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-medium transition shadow-md">
-                        Login
-                    </button>
-                </div>
+                </form>
                 
                 <!-- Owner Dashboard -->
                 <div id="owner-dashboard" class="hidden p-8">

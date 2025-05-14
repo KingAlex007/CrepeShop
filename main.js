@@ -1,4 +1,4 @@
-console.log("JS wurde geladen!");
+
 
 // Mobile menu toggle
 document.getElementById('mobile-menu-button')?.addEventListener('click', function () {

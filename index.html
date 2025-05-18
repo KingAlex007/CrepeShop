@@ -5,1231 +5,1401 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crepe Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #fff5f7;
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-        
-        .pink-gradient {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
-        
-        .menu-item {
-            transition: all 0.3s ease;
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
         }
-        
-        .menu-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        .pulse-animation {
+            animation: pulse 2s infinite;
         }
-        
-        .floating-btn {
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
         }
-        
-        .custom-radio:checked + .radio-label {
-            border-color: #ff6b8b;
-            background-color: #ffebee;
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
         }
-        
+        .crepe-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f6e05e;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         .order-card {
             transition: all 0.3s ease;
         }
-        
         .order-card:hover {
-            transform: scale(1.02);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        
-        .blink {
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        @media (max-width: 768px) {
+            .mobile-stack {
+                flex-direction: column;
+            }
+            .mobile-full {
+                width: 100% !important;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- Header with Menu -->
-    <header class="pink-gradient text-white shadow-lg">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">🍓 Crepe Delight</h1>
+<body class="bg-yellow-50 min-h-screen">
+    <!-- Firebase Configuration -->
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+    </script>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header with Role Menu -->
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-yellow-800">Crepe Management System</h1>
             <div class="relative">
-                <button id="menu-btn" class="text-2xl focus:outline-none">
-                    <i class="fas fa-ellipsis-v"></i>
+                <button id="roleMenuButton" class="p-2 rounded-full hover:bg-yellow-200 transition">
+                    <i class="fas fa-ellipsis-v text-yellow-700 text-xl"></i>
                 </button>
-                <div id="menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                <div id="roleMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                     <div class="py-1">
-                        <button onclick="showLoginModal('owner')" class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-pink-100">Owner Login</button>
-                        <button onclick="showLoginModal('cashier')" class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-pink-100">Kassierer Login</button>
-                        <button onclick="showLoginModal('maker')" class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-pink-100">Maker Login</button>
+                        <button onclick="showLogin('customer')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Kundenbereich</button>
+                        <button onclick="showLogin('maker')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Hersteller Login</button>
+                        <button onclick="showLogin('waiter')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Kellner Login</button>
+                        <button onclick="showLogin('owner')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Owner Login</button>
+                        <button onclick="showLogin('admin')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Admin Login</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Customer View (Default) -->
+        <div id="customerView" class="bg-white rounded-lg shadow-md p-6 mb-8 slide-in">
+            <div class="text-center mb-8">
+                <div class="float-animation inline-block">
+                    <i class="fas fa-pancakes text-yellow-500 text-6xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-yellow-800 mt-4">Willkommen beim Crepe Stand!</h2>
+                <p class="text-yellow-600">Geben Sie Ihre Bestellnummer ein, um den Status zu sehen</p>
+            </div>
+            
+            <div class="max-w-md mx-auto">
+                <div class="mb-6">
+                    <label for="orderNumber" class="block text-sm font-medium text-yellow-700 mb-2">Bestellnummer</label>
+                    <input type="text" id="orderNumber" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="z.B. CR1234">
+                </div>
+                <button onclick="checkOrderStatus()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                    <span>Status prüfen</span>
+                    <i class="fas fa-search ml-2"></i>
+                </button>
+            </div>
+            
+            <div id="orderStatus" class="hidden mt-8 max-w-md mx-auto bg-yellow-100 border-l-4 border-yellow-500 p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-yellow-800">Bestellung #<span id="displayOrderNumber"></span></h3>
+                        <p class="text-yellow-700">Status: <span id="orderStatusText"></span></p>
+                    </div>
+                    <div id="orderTimer" class="text-2xl font-bold text-yellow-700"></div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-yellow-600"><span id="ordersBeforeYou"></span> Bestellungen vor Ihnen</p>
+                    <div class="w-full bg-yellow-200 rounded-full h-2.5 mt-2">
+                        <div id="progressBar" class="bg-yellow-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="readyAlert" class="hidden mt-4 pulse-animation bg-yellow-500 text-white p-3 rounded-md text-center">
+                    <i class="fas fa-bell mr-2"></i> Ihre Bestellung ist fertig! Bitte kommen Sie zum Crepe Stand.
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center">
+                <h3 class="text-xl font-bold text-yellow-800 mb-4">Aktuelle Wartezeiten</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <div class="text-yellow-700 font-medium">Station 1</div>
+                        <div class="text-2xl font-bold text-yellow-800" id="station1Time">5 min</div>
+                    </div>
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <div class="text-yellow-700 font-medium">Station 2</div>
+                        <div class="text-2xl font-bold text-yellow-800" id="station2Time">7 min</div>
+                    </div>
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <div class="text-yellow-700 font-medium">Station 3</div>
+                        <div class="text-2xl font-bold text-yellow-800" id="station3Time">3 min</div>
                     </div>
                 </div>
             </div>
         </div>
-    </header>
 
-    <!-- Main Content - Customer View by default -->
-    <main class="container mx-auto px-4 py-8">
-        <div id="customer-view" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
-            <h2 class="text-2xl font-bold text-pink-600 mb-6 text-center">Bestellstatus prüfen</h2>
-            <div class="mb-4">
-                <label for="order-number" class="block text-gray-700 text-sm font-bold mb-2">Bestellnummer:</label>
-                <input type="text" id="order-number" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300" placeholder="12345">
-            </div>
-            <button onclick="checkOrderStatus()" class="w-full pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                Status prüfen
-            </button>
-            
-            <div id="order-status" class="mt-6 hidden">
-                <div class="border-l-4 border-pink-500 pl-4">
-                    <h3 class="font-bold text-lg">Bestellstatus</h3>
-                    <p id="order-position" class="text-gray-700"></p>
-                    <p id="order-time" class="text-gray-700"></p>
-                    <p id="order-alert" class="hidden text-pink-600 font-bold blink">Bitte kommen Sie zum Crepe-Stand!</p>
+        <!-- Login Modals -->
+        <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="loginTitle" class="text-xl font-bold text-yellow-800">Login</h3>
+                    <button onclick="hideLogin()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
+                <div class="mb-4">
+                    <label for="loginUsername" class="block text-sm font-medium text-yellow-700 mb-2">Benutzername</label>
+                    <input type="text" id="loginUsername" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                </div>
+                <div class="mb-6">
+                    <label for="loginPassword" class="block text-sm font-medium text-yellow-700 mb-2">Passwort</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                </div>
+                <button id="loginButton" onclick="login()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                    Einloggen
+                </button>
             </div>
         </div>
 
-        <!-- Owner Dashboard (hidden by default) -->
-        <div id="owner-dashboard" class="hidden">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-bold text-pink-600">Owner Dashboard</h2>
-                <button onclick="showAddWaiterModal()" class="pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                    <i class="fas fa-plus mr-2"></i>Neuer Kellner
+        <!-- Maker View -->
+        <div id="makerView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-800">Hersteller Dashboard</h2>
+                <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
                 </button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4">Umsatz heute</h3>
-                    <p class="text-3xl font-bold text-pink-600">€<span id="today-revenue">245.80</span></p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4">Aktive Bestellungen</h3>
-                    <p class="text-3xl font-bold text-pink-600"><span id="active-orders">7</span></p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4">Durchschnittliche Wartezeit</h3>
-                    <p class="text-3xl font-bold text-pink-600"><span id="avg-wait-time">12</span> min</p>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-yellow-700 mb-2">Station auswählen</label>
+                <div class="flex space-x-4">
+                    <button onclick="selectStation(1)" id="station1Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 1</button>
+                    <button onclick="selectStation(2)" id="station2Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 2</button>
+                    <button onclick="selectStation(3)" id="station3Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 3</button>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4">Umsatzverlauf</h3>
-                    <canvas id="revenue-chart" height="200"></canvas>
+            <div id="makerStationInfo" class="hidden mb-6 p-4 bg-yellow-100 rounded-md">
+                <h3 class="font-bold text-yellow-800 mb-2">Aktuelle Station: <span id="currentStation"></span></h3>
+                <p class="text-yellow-700">Status: <span id="stationStatus">Bereit</span></p>
+            </div>
+            
+            <div id="currentOrder" class="hidden mb-8 p-6 bg-white border border-yellow-200 rounded-lg shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-yellow-800">Aktuelle Bestellung</h3>
+                    <span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">#<span id="currentOrderNumber"></span></span>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4">Beliebteste Crepes</h3>
-                    <canvas id="popular-crepes" height="200"></canvas>
+                <div id="orderDetails" class="mb-4">
+                    <!-- Order details will be populated here -->
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="markOrderAsDone()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        Fertigstellen
+                    </button>
+                    <button onclick="cancelCurrentOrder()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        Stornieren
+                    </button>
                 </div>
             </div>
             
-            <div class="mt-8 bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4">Aktuelle Bestellungen</h3>
-                <div id="current-orders-list" class="space-y-3">
-                    <!-- Orders will be added here dynamically -->
+            <div id="noOrders" class="text-center py-8">
+                <div class="inline-block mb-4">
+                    <i class="fas fa-concierge-bell text-yellow-500 text-5xl"></i>
                 </div>
+                <h3 class="text-xl font-bold text-yellow-800 mb-2">Keine aktiven Bestellungen</h3>
+                <p class="text-yellow-600">Warten Sie auf neue Bestellungen für Ihre Station</p>
             </div>
             
-            <div class="mt-8 bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4">Kellner verwalten</h3>
-                <div id="waiters-list" class="space-y-3">
-                    <!-- Waiters will be added here dynamically -->
+            <div id="orderQueue" class="mt-8">
+                <h3 class="text-lg font-bold text-yellow-800 mb-4">Warteschlange</h3>
+                <div id="queueList" class="space-y-3">
+                    <!-- Order queue will be populated here -->
                 </div>
             </div>
         </div>
 
-        <!-- Cashier Dashboard (hidden by default) -->
-        <div id="cashier-dashboard" class="hidden">
-            <h2 class="text-2xl font-bold text-pink-600 mb-6">Kassierer Dashboard</h2>
+        <!-- Waiter View -->
+        <div id="waiterView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-800">Kellner Dashboard</h2>
+                <div>
+                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
+                    </button>
+                </div>
+            </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-2">
-                    <div class="bg-white p-6 rounded-lg shadow mb-6">
-                        <h3 class="text-lg font-semibold mb-4">Neue Bestellung</h3>
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Crepe-Typ:</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <input type="radio" id="sweet-crepe" name="crepe-type" value="sweet" class="hidden custom-radio" checked>
-                                    <label for="sweet-crepe" class="radio-label block p-3 border-2 border-gray-200 rounded-lg cursor-pointer text-center">
-                                        <i class="fas fa-ice-cream text-2xl text-pink-500 mb-1"></i>
-                                        <span>Süß</span>
-                                    </label>
-                                </div>
-                                <div>
-                                    <input type="radio" id="savory-crepe" name="crepe-type" value="savory" class="hidden custom-radio">
-                                    <label for="savory-crepe" class="radio-label block p-3 border-2 border-gray-200 rounded-lg cursor-pointer text-center">
-                                        <i class="fas fa-cheese text-2xl text-yellow-500 mb-1"></i>
-                                        <span>Herzhaft</span>
-                                    </label>
-                                </div>
-                            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800 mb-3">Vordefinierte Crepes</h3>
+                    <div class="space-y-2">
+                        <button onclick="addPredefinedOrder('Classic', 4.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Classic (Zucker & Zitrone)</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">4.50€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Nutella', 5.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Nutella</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.00€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Erdbeer-Nutella', 6.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Erdbeer-Nutella</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">6.00€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Banane-Nutella', 5.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Banane-Nutella</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.50€</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800 mb-3">Beliebte Kombinationen</h3>
+                    <div class="space-y-2">
+                        <button onclick="addPredefinedOrder('Haus-Spezial', 7.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Haus-Spezial</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">7.00€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Kinder-Crepe', 5.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Kinder-Crepe</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.50€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Fitness', 6.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Fitness (Honig & Nüsse)</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">6.50€</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800 mb-3">Getränke</h3>
+                    <div class="space-y-2">
+                        <button onclick="addPredefinedOrder('Cola', 2.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Cola</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.50€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Wasser', 2.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Wasser</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.00€</span>
+                        </button>
+                        <button onclick="addPredefinedOrder('Apfelsaft', 2.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
+                            <span>Apfelsaft</span>
+                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.50€</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <button onclick="toggleCustomOrderForm()" class="flex items-center text-yellow-700 hover:text-yellow-900">
+                    <i class="fas fa-plus-circle mr-2"></i> Custom Crepe erstellen
+                </button>
+                
+                <div id="customOrderForm" class="hidden mt-4 bg-yellow-50 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800 mb-3">Custom Crepe</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-yellow-700 mb-2">Basis</label>
+                            <select id="baseSelect" class="w-full px-4 py-2 border border-yellow-300 rounded-md">
+                                <option value="Normal">Normal</option>
+                                <option value="Vollkorn">Vollkorn (+0.50€)</option>
+                                <option value="Glutenfrei">Glutenfrei (+1.00€)</option>
+                            </select>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Vordefinierte Crepes:</label>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                <div>
-                                    <button onclick="addPredefinedCrepe('Nutella', 4.50)" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Nutella</div>
-                                        <div class="text-sm text-gray-600">€4.50</div>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addPredefinedCrepe('Erdbeer', 5.00)" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Erdbeer</div>
-                                        <div class="text-sm text-gray-600">€5.00</div>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addPredefinedCrepe('Banane', 4.80)" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Banane</div>
-                                        <div class="text-sm text-gray-600">€4.80</div>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addPredefinedCrepe('Schinken-Käse', 6.00)" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Schinken-Käse</div>
-                                        <div class="text-sm text-gray-600">€6.00</div>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addPredefinedCrepe('Spinaci', 5.50)" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Spinaci</div>
-                                        <div class="text-sm text-gray-600">€5.50</div>
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="showCustomCrepeModal()" class="w-full p-2 border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        <div class="font-medium">Custom</div>
-                                        <div class="text-sm text-gray-600">Auswahl</div>
-                                    </button>
-                                </div>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-yellow-700 mb-2">Hauptzutat</label>
+                            <select id="mainSelect" class="w-full px-4 py-2 border border-yellow-300 rounded-md">
+                                <option value="Nutella">Nutella</option>
+                                <option value="Zucker-Zitrone">Zucker & Zitrone</option>
+                                <option value="Honig">Honig (+0.50€)</option>
+                                <option value="Marmelade">Marmelade (+0.50€)</option>
+                            </select>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Extras:</label>
-                            <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
-                                <div>
-                                    <button onclick="addExtra('Eis', 1.50)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Eis +€1.50
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addExtra('Sahne', 1.00)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Sahne +€1.00
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addExtra('Schoko', 0.80)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Schoko +€0.80
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addExtra('Nüsse', 1.20)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Nüsse +€1.20
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addExtra('Obst', 1.50)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Obst +€1.50
-                                    </button>
-                                </div>
-                                <div>
-                                    <button onclick="addExtra('Sirup', 0.50)" class="w-full p-2 text-xs border border-gray-200 rounded hover:bg-pink-50 transition">
-                                        Sirup +€0.50
-                                    </button>
-                                </div>
-                            </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-yellow-700 mb-2">Extras (Mehrfachauswahl möglich)</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Banane (+0.80€)">
+                                <span class="ml-2 text-yellow-700">Banane (+0.80€)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Erdbeeren (+1.00€)">
+                                <span class="ml-2 text-yellow-700">Erdbeeren (+1.00€)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Nüsse (+0.50€)">
+                                <span class="ml-2 text-yellow-700">Nüsse (+0.50€)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Schokostreusel (+0.50€)">
+                                <span class="ml-2 text-yellow-700">Schokostreusel (+0.50€)</span>
+                            </label>
                         </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-yellow-800">Gesamtpreis:</span>
+                            <span id="customOrderPrice" class="ml-2 text-lg font-bold">5.00€</span>
+                        </div>
+                        <button onclick="addCustomOrder()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            Hinzufügen
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-yellow-800">Aktuelle Bestellung</h3>
+                    <div>
+                        <span class="text-sm text-yellow-600">Gesamt:</span>
+                        <span id="currentOrderTotal" class="ml-2 font-bold text-yellow-800">0.00€</span>
+                    </div>
+                </div>
+                
+                <div id="currentOrderItems" class="mb-4">
+                    <!-- Current order items will be shown here -->
+                    <p class="text-yellow-600 text-center py-4">Noch keine Artikel hinzugefügt</p>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <button onclick="clearCurrentOrder()" class="text-red-600 hover:text-red-800 flex items-center">
+                        <i class="fas fa-trash-alt mr-2"></i> Löschen
+                    </button>
+                    <button onclick="submitOrder()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Bestellung aufgeben
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-bold text-yellow-800 mb-3">Aktive Bestellungen</h3>
+                    <div id="activeOrders" class="space-y-3">
+                        <!-- Active orders will be shown here -->
+                        <p class="text-yellow-600 text-center py-4">Keine aktiven Bestellungen</p>
                     </div>
                 </div>
                 
                 <div>
-                    <div class="bg-white p-6 rounded-lg shadow sticky top-4">
-                        <h3 class="text-lg font-semibold mb-4">Aktuelle Bestellung</h3>
-                        <div id="current-order-items" class="mb-4">
-                            <!-- Order items will be added here -->
-                            <p class="text-gray-500 text-center py-4">Fügen Sie Crepes hinzu</p>
+                    <h3 class="text-lg font-bold text-yellow-800 mb-3">Fertige Bestellungen</h3>
+                    <div id="completedOrders" class="space-y-3">
+                        <!-- Completed orders will be shown here -->
+                        <p class="text-yellow-600 text-center py-4">Keine fertigen Bestellungen</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Owner View -->
+        <div id="ownerView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-800">Owner Dashboard</h2>
+                <div class="flex space-x-4">
+                    <button onclick="showAddUserModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i> Benutzer hinzufügen
+                    </button>
+                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-yellow-100 p-6 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-yellow-700">Heutige Bestellungen</p>
+                            <h3 class="text-3xl font-bold text-yellow-800" id="todayOrdersCount">0</h3>
                         </div>
-                        <div class="border-t pt-4">
-                            <div class="flex justify-between mb-2">
-                                <span class="font-medium">Zwischensumme:</span>
-                                <span>€<span id="subtotal">0.00</span></span>
+                        <div class="bg-yellow-200 p-3 rounded-full">
+                            <i class="fas fa-clipboard-list text-yellow-700"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="h-2 bg-yellow-200 rounded-full">
+                            <div id="todayOrdersProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="ordersComparison">0%</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-100 p-6 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-yellow-700">Heutiger Umsatz</p>
+                            <h3 class="text-3xl font-bold text-yellow-800" id="todayRevenue">0.00€</h3>
+                        </div>
+                        <div class="bg-yellow-200 p-3 rounded-full">
+                            <i class="fas fa-euro-sign text-yellow-700"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="h-2 bg-yellow-200 rounded-full">
+                            <div id="todayRevenueProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="revenueComparison">0%</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-100 p-6 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-yellow-700">Durchschnittliche Wartezeit</p>
+                            <h3 class="text-3xl font-bold text-yellow-800" id="avgWaitTime">0 min</h3>
+                        </div>
+                        <div class="bg-yellow-200 p-3 rounded-full">
+                            <i class="fas fa-clock text-yellow-700"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="h-2 bg-yellow-200 rounded-full">
+                            <div id="waitTimeProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="waitTimeComparison">0%</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-yellow-800 mb-4">Umsatzentwicklung</h3>
+                <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <h3 class="text-lg font-bold text-yellow-800 mb-4">Beliebteste Crepes</h3>
+                    <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                        <canvas id="popularCrepesChart" height="300"></canvas>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-yellow-800 mb-4">Bestellungen nach Tageszeit</h3>
+                    <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                        <canvas id="ordersByTimeChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-yellow-800">Aktive Bestellungen</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshOrders()" class="text-yellow-700 hover:text-yellow-900">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button onclick="exportOrders()" class="text-yellow-700 hover:text-yellow-900">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
+                    <table class="min-w-full divide-y divide-yellow-200">
+                        <thead class="bg-yellow-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Bestellnummer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Details</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Station</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ownerOrdersList" class="bg-white divide-y divide-yellow-200">
+                            <!-- Active orders will be listed here -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-yellow-600">Keine aktiven Bestellungen</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-yellow-800">Mitarbeiter</h3>
+                    <button onclick="refreshUsers()" class="text-yellow-700 hover:text-yellow-900">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
+                    <table class="min-w-full divide-y divide-yellow-200">
+                        <thead class="bg-yellow-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Benutzername</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Rolle</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Erstellt am</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersList" class="bg-white divide-y divide-yellow-200">
+                            <!-- Users will be listed here -->
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-yellow-600">Keine Mitarbeiter gefunden</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="adminView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-800">Admin Dashboard</h2>
+                <div class="flex space-x-4">
+                    <button onclick="showAddUserModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i> Benutzer hinzufügen
+                    </button>
+                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <button onclick="switchToView('customer')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
+                    <i class="fas fa-user text-yellow-700 text-2xl mb-2"></i>
+                    <span class="text-yellow-800 font-medium">Kundenansicht</span>
+                </button>
+                <button onclick="switchToView('maker')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
+                    <i class="fas fa-utensils text-yellow-700 text-2xl mb-2"></i>
+                    <span class="text-yellow-800 font-medium">Herstelleransicht</span>
+                </button>
+                <button onclick="switchToView('waiter')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
+                    <i class="fas fa-concierge-bell text-yellow-700 text-2xl mb-2"></i>
+                    <span class="text-yellow-800 font-medium">Kellneransicht</span>
+                </button>
+                <button onclick="switchToView('owner')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
+                    <i class="fas fa-user-tie text-yellow-700 text-2xl mb-2"></i>
+                    <span class="text-yellow-800 font-medium">Owneransicht</span>
+                </button>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-yellow-800 mb-4">Systemstatistiken</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-yellow-100 p-6 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-yellow-700">Gesamte Bestellungen</p>
+                                <h3 class="text-3xl font-bold text-yellow-800" id="totalOrdersCount">0</h3>
                             </div>
-                            <div class="flex justify-between mb-2">
-                                <span class="font-medium">MwSt (7%):</span>
-                                <span>€<span id="tax">0.00</span></span>
-                            </div>
-                            <div class="flex justify-between font-bold text-lg">
-                                <span>Gesamt:</span>
-                                <span>€<span id="total">0.00</span></span>
+                            <div class="bg-yellow-200 p-3 rounded-full">
+                                <i class="fas fa-clipboard-list text-yellow-700"></i>
                             </div>
                         </div>
-                        <button onclick="submitOrder()" class="w-full mt-4 pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                            Bestellung abschließen (€<span id="order-total">0.00</span>)
+                    </div>
+                    
+                    <div class="bg-yellow-100 p-6 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-yellow-700">Gesamter Umsatz</p>
+                                <h3 class="text-3xl font-bold text-yellow-800" id="totalRevenue">0.00€</h3>
+                            </div>
+                            <div class="bg-yellow-200 p-3 rounded-full">
+                                <i class="fas fa-euro-sign text-yellow-700"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-100 p-6 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-yellow-700">Aktive Benutzer</p>
+                                <h3 class="text-3xl font-bold text-yellow-800" id="activeUsersCount">0</h3>
+                            </div>
+                            <div class="bg-yellow-200 p-3 rounded-full">
+                                <i class="fas fa-users text-yellow-700"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-yellow-800 mb-4">Systemeinstellungen</h3>
+                <div class="bg-white p-6 rounded-lg border border-yellow-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-yellow-700 mb-2">Standard-Crepe-Preis</label>
+                            <div class="flex">
+                                <input type="number" id="defaultCrepePrice" class="w-full px-4 py-2 border border-yellow-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-yellow-500" value="4.50" step="0.10">
+                                <span class="inline-flex items-center px-3 bg-yellow-100 text-yellow-700 border border-l-0 border-yellow-300 rounded-r-md">€</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-yellow-700 mb-2">Durchschnittliche Zubereitungszeit</label>
+                            <div class="flex">
+                                <input type="number" id="avgPrepTime" class="w-full px-4 py-2 border border-yellow-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-yellow-500" value="5" min="1">
+                                <span class="inline-flex items-center px-3 bg-yellow-100 text-yellow-700 border border-l-0 border-yellow-300 rounded-r-md">min</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-yellow-700 mb-2">Benachrichtigung bei Bestellungsstatus</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enableNotifications" class="form-checkbox h-5 w-5 text-yellow-600" checked>
+                            <span class="ml-2 text-yellow-700">Aktivieren</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="saveSystemSettings()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            Einstellungen speichern
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div class="mt-6 bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4">Aktive Bestellungen</h3>
-                <div id="cashier-active-orders" class="space-y-3">
-                    <!-- Active orders will be added here -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-yellow-800">Alle Bestellungen</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshAllOrders()" class="text-yellow-700 hover:text-yellow-900">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button onclick="exportAllOrders()" class="text-yellow-700 hover:text-yellow-900">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
+                    <table class="min-w-full divide-y divide-yellow-200">
+                        <thead class="bg-yellow-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Bestellnummer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Details</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Preis</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allOrdersList" class="bg-white divide-y divide-yellow-200">
+                            <!-- All orders will be listed here -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-yellow-600">Keine Bestellungen gefunden</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Maker Dashboard (hidden by default) -->
-        <div id="maker-dashboard" class="hidden">
-            <h2 class="text-2xl font-bold text-pink-600 mb-6">Maker Dashboard</h2>
-            
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Station auswählen:</label>
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <input type="radio" id="station-1" name="maker-station" value="1" class="hidden custom-radio" checked>
-                        <label for="station-1" class="radio-label block p-4 border-2 border-gray-200 rounded-lg cursor-pointer text-center">
-                            <i class="fas fa-1 text-2xl text-pink-500 mb-1"></i>
-                            <span>Station 1</span>
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" id="station-2" name="maker-station" value="2" class="hidden custom-radio">
-                        <label for="station-2" class="radio-label block p-4 border-2 border-gray-200 rounded-lg cursor-pointer text-center">
-                            <i class="fas fa-2 text-2xl text-pink-500 mb-1"></i>
-                            <span>Station 2</span>
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" id="station-3" name="maker-station" value="3" class="hidden custom-radio">
-                        <label for="station-3" class="radio-label block p-4 border-2 border-gray-200 rounded-lg cursor-pointer text-center">
-                            <i class="fas fa-3 text-2xl text-pink-500 mb-1"></i>
-                            <span>Station 3</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4">Aktuelle Bestellung</h3>
-                <div id="current-maker-order" class="text-center py-8 text-gray-500">
-                    Keine aktive Bestellung für diese Station
-                </div>
-                <div class="flex justify-center space-x-4">
-                    <button onclick="markOrderAsDone()" class="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition hidden" id="complete-order-btn">
-                        <i class="fas fa-check mr-2"></i>Fertiggestellt
-                    </button>
-                    <button onclick="skipOrder()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition hidden" id="skip-order-btn">
-                        <i class="fas fa-forward mr-2"></i>Überspringen
+        <!-- Add User Modal -->
+        <div id="addUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-yellow-800">Benutzer hinzufügen</h3>
+                    <button onclick="hideAddUserModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-            </div>
-            
-            <div class="mt-6 bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold mb-4">Warteschlange</h3>
-                <div id="maker-order-queue" class="space-y-3">
-                    <!-- Order queue will be added here -->
+                
+                <div class="mb-4">
+                    <label for="newUsername" class="block text-sm font-medium text-yellow-700 mb-2">Benutzername</label>
+                    <input type="text" id="newUsername" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="newUserPassword" class="block text-sm font-medium text-yellow-700 mb-2">Passwort</label>
+                    <input type="password" id="newUserPassword" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label for="newUserRole" class="block text-sm font-medium text-yellow-700 mb-2">Rolle</label>
+                    <select id="newUserRole" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <option value="waiter">Kellner</option>
+                        <option value="maker">Hersteller</option>
+                        <option value="owner">Owner</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button onclick="hideAddUserModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md transition duration-300">
+                        Abbrechen
+                    </button>
+                    <button onclick="addNewUser()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        Speichern
+                    </button>
                 </div>
             </div>
         </div>
-    </main>
 
-    <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-pink-600" id="modal-title">Login</h3>
-                <button onclick="hideLoginModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="mb-4">
-                <label for="login-username" class="block text-gray-700 text-sm font-bold mb-2">Benutzername:</label>
-                <input type="text" id="login-username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300">
-            </div>
-            <div class="mb-6">
-                <label for="login-password" class="block text-gray-700 text-sm font-bold mb-2">Passwort:</label>
-                <input type="password" id="login-password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300">
-            </div>
-            <button onclick="login()" class="w-full pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                Einloggen
-            </button>
-        </div>
-    </div>
-
-    <!-- Add Waiter Modal -->
-    <div id="add-waiter-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-pink-600">Neuer Kellner</h3>
-                <button onclick="hideAddWaiterModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="mb-4">
-                <label for="waiter-name" class="block text-gray-700 text-sm font-bold mb-2">Name:</label>
-                <input type="text" id="waiter-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300">
-            </div>
-            <div class="mb-4">
-                <label for="waiter-username" class="block text-gray-700 text-sm font-bold mb-2">Benutzername:</label>
-                <input type="text" id="waiter-username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300">
-            </div>
-            <div class="mb-6">
-                <label for="waiter-password" class="block text-gray-700 text-sm font-bold mb-2">Passwort:</label>
-                <input type="password" id="waiter-password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-pink-300">
-            </div>
-            <button onclick="addWaiter()" class="w-full pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                Kellner hinzufügen
-            </button>
-        </div>
-    </div>
-
-    <!-- Custom Crepe Modal -->
-    <div id="custom-crepe-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-pink-600">Custom Crepe erstellen</h3>
-                <button onclick="hideCustomCrepeModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Basis:</label>
-                <div class="grid grid-cols-2 gap-2">
+        <!-- Order Details Modal -->
+        <div id="orderDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-yellow-800">Bestellungsdetails #<span id="modalOrderNumber"></span></h3>
+                    <button onclick="hideOrderDetailsModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div id="modalOrderDetails" class="mb-4">
+                    <!-- Order details will be shown here -->
+                </div>
+                
+                <div class="flex justify-between items-center mb-4">
                     <div>
-                        <input type="radio" id="base-normal" name="crepe-base" value="normal" class="hidden custom-radio" checked>
-                        <label for="base-normal" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Normal (€3.50)
-                        </label>
+                        <span class="font-bold text-yellow-800">Gesamtpreis:</span>
+                        <span id="modalOrderTotal" class="ml-2 text-lg font-bold">0.00€</span>
                     </div>
                     <div>
-                        <input type="radio" id="base-chocolate" name="crepe-base" value="chocolate" class="hidden custom-radio">
-                        <label for="base-chocolate" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Schoko (€4.00)
-                        </label>
+                        <span class="font-bold text-yellow-800">Status:</span>
+                        <span id="modalOrderStatus" class="ml-2 px-2 py-1 rounded text-sm bg-yellow-200 text-yellow-800">In Bearbeitung</span>
                     </div>
                 </div>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Belag (Hauptzutat):</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <input type="radio" id="topping-nutella" name="crepe-topping" value="nutella" class="hidden custom-radio" checked>
-                        <label for="topping-nutella" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Nutella (€1.00)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" id="topping-cheese" name="crepe-topping" value="cheese" class="hidden custom-radio">
-                        <label for="topping-cheese" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Käse (€1.20)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" id="topping-jam" name="crepe-topping" value="jam" class="hidden custom-radio">
-                        <label for="topping-jam" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Marmelade (€0.80)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" id="topping-ham" name="crepe-topping" value="ham" class="hidden custom-radio">
-                        <label for="topping-ham" class="radio-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-sm">
-                            Schinken (€1.50)
-                        </label>
-                    </div>
+                
+                <div class="flex justify-end">
+                    <button onclick="hideOrderDetailsModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        Schließen
+                    </button>
                 </div>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Zusätzliche Zutaten:</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
-                        <input type="checkbox" id="extra-banana" class="hidden custom-checkbox">
-                        <label for="extra-banana" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Banane (€1.00)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="extra-strawberry" class="hidden custom-checkbox">
-                        <label for="extra-strawberry" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Erdbeer (€1.50)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="extra-spinach" class="hidden custom-checkbox">
-                        <label for="extra-spinach" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Spinat (€1.00)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="extra-mushroom" class="hidden custom-checkbox">
-                        <label for="extra-mushroom" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Pilze (€1.20)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="extra-whipped" class="hidden custom-checkbox">
-                        <label for="extra-whipped" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Sahne (€1.00)
-                        </label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="extra-icecream" class="hidden custom-checkbox">
-                        <label for="extra-icecream" class="checkbox-label block p-2 border-2 border-gray-200 rounded cursor-pointer text-center text-xs">
-                            Eis (€1.50)
-                        </label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center mt-6">
-                <div class="font-bold">Preis: €<span id="custom-crepe-price">4.50</span></div>
-                <button onclick="addCustomCrepeToOrder()" class="pink-gradient text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                    Zur Bestellung hinzufügen
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- Notification -->
-    <div id="notification" class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hidden z-50">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-2"></i>
-            <span id="notification-message">Erfolgreich!</span>
-        </div>
-    </div>
-
+    <!-- JavaScript -->
     <script>
         // Global variables
         let currentUser = null;
+        let currentRole = null;
+        let currentStation = null;
         let currentOrder = [];
-        let orders = [];
-        let waiters = [
-            { id: 1, name: "Anna Müller", username: "anna", password: "anna123" },
-            { id: 2, name: "Tom Schneider", username: "tom", password: "tom123" }
-        ];
-        let makers = [
-            { id: 1, name: "Lisa Weber", username: "lisa", password: "lisa123", station: 1 },
-            { id: 2, name: "Max Bauer", username: "max", password: "max123", station: 2 },
-            { id: 3, name: "Julia Fischer", username: "julia", password: "julia123", station: 3 }
-        ];
-        let owner = { username: "admin", password: "admin123" };
-        let currentOrderNumber = 100;
-        let orderQueue = [];
+        let allOrders = [];
+        let users = [];
+        let systemSettings = {
+            defaultCrepePrice: 4.50,
+            avgPrepTime: 5,
+            enableNotifications: true
+        };
         
-        // Sample data for orders
-        function initializeSampleOrders() {
-            orders = [
-                { id: 101, items: [{name: "Nutella Crepe", price: 4.50}], status: "in-progress", station: 1, time: new Date(Date.now() - 120000), position: 1 },
-                { id: 102, items: [{name: "Schinken-Käse Crepe", price: 6.00}, {name: "Erdbeer Crepe", price: 5.00}], status: "waiting", station: 2, time: new Date(Date.now() - 60000), position: 2 },
-                { id: 103, items: [{name: "Banane Crepe", price: 4.80}, {name: "Eis", price: 1.50}], status: "waiting", station: 3, time: new Date(), position: 3 }
-            ];
-            
-            orderQueue = orders.filter(order => order.status === "waiting");
-        }
-        
-        // Initialize charts
-        function initializeCharts() {
-            // Revenue Chart
-            const revenueCtx = document.getElementById('revenue-chart').getContext('2d');
-            const revenueChart = new Chart(revenueCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
-                    datasets: [{
-                        label: 'Umsatz (€)',
-                        data: [320, 450, 380, 510, 620, 890, 750],
-                        backgroundColor: 'rgba(255, 107, 179, 0.2)',
-                        borderColor: 'rgba(255, 107, 179, 1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-            
-            // Popular Crepes Chart
-            const popularCtx = document.getElementById('popular-crepes').getContext('2d');
-            const popularChart = new Chart(popularCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Nutella', 'Erdbeer', 'Banane', 'Schinken-Käse', 'Spinaci', 'Andere'],
-                    datasets: [{
-                        data: [35, 25, 15, 12, 8, 5],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)',
-                            'rgba(153, 102, 255, 0.7)',
-                            'rgba(255, 159, 64, 0.7)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                        }
-                    }
-                }
-            });
-        }
+        // Chart.js initialization
+        const chartColors = {
+            yellow: {
+                light: '#FEF3C7',
+                medium: '#FCD34D',
+                dark: '#F59E0B'
+            },
+            green: {
+                light: '#D1FAE5',
+                medium: '#6EE7B7',
+                dark: '#10B981'
+            },
+            blue: {
+                light: '#DBEAFE',
+                medium: '#93C5FD',
+                dark: '#3B82F6'
+            }
+        };
         
         // DOM Ready
         document.addEventListener('DOMContentLoaded', function() {
-            initializeSampleOrders();
-            initializeCharts();
-            updateOrderQueueDisplay();
-            updateWaitersList();
+            // Initialize UI elements
+            initRoleMenu();
+            updateCustomOrderPrice();
             
-            // Menu button click handler
-            document.getElementById('menu-btn').addEventListener('click', function() {
-                document.getElementById('menu-dropdown').classList.toggle('hidden');
+            // Event listeners for custom order form
+            document.getElementById('baseSelect').addEventListener('change', updateCustomOrderPrice);
+            document.getElementById('mainSelect').addEventListener('change', updateCustomOrderPrice);
+            document.querySelectorAll('#customOrderForm input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateCustomOrderPrice);
             });
             
-            // Close menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!event.target.closest('#menu-btn') && !event.target.closest('#menu-dropdown')) {
-                    document.getElementById('menu-dropdown').classList.add('hidden');
-                }
-            });
+            // Load system settings
+            loadSystemSettings();
             
-            // Update custom crepe price when options change
-            document.querySelectorAll('#custom-crepe-modal input').forEach(input => {
-                input.addEventListener('change', updateCustomCrepePrice);
-            });
+            // Check if there's a logged in user (for demo purposes)
+            // In a real app, you would check Firebase auth state
+            // simulateLogin('admin', 'admin123', 'admin');
         });
         
-        // Show login modal
-        function showLoginModal(role) {
-            document.getElementById('modal-title').textContent = `${role.charAt(0).toUpperCase() + role.slice(1)} Login`;
-            document.getElementById('login-modal').setAttribute('data-role', role);
-            document.getElementById('login-modal').classList.remove('hidden');
+        // Initialize role menu toggle
+        function initRoleMenu() {
+            const roleMenuButton = document.getElementById('roleMenuButton');
+            const roleMenu = document.getElementById('roleMenu');
+            
+            roleMenuButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                roleMenu.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function() {
+                roleMenu.classList.add('hidden');
+            });
+        }
+        
+        // Show login modal for specific role
+        function showLogin(role) {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginTitle').textContent = `${roleToGerman(role)} Login`;
+            document.getElementById('loginButton').setAttribute('data-role', role);
         }
         
         // Hide login modal
-        function hideLoginModal() {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
+        function hideLogin() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+        
+        // Convert role to German display name
+        function roleToGerman(role) {
+            const roles = {
+                'customer': 'Kunde',
+                'maker': 'Hersteller',
+                'waiter': 'Kellner',
+                'owner': 'Owner',
+                'admin': 'Admin'
+            };
+            return roles[role] || role;
         }
         
         // Login function
         function login() {
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const role = document.getElementById('login-modal').getAttribute('data-role');
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginButton').getAttribute('data-role');
             
-            let authenticated = false;
-            
-            if (role === 'owner') {
-                if (username === owner.username && password === owner.password) {
-                    authenticated = true;
-                    currentUser = { role: 'owner', name: 'Owner' };
-                }
-            } else if (role === 'cashier') {
-                const waiter = waiters.find(w => w.username === username && w.password === password);
-                if (waiter) {
-                    authenticated = true;
-                    currentUser = { role: 'cashier', name: waiter.name, id: waiter.id };
-                }
-            } else if (role === 'maker') {
-                const maker = makers.find(m => m.username === username && m.password === password);
-                if (maker) {
-                    authenticated = true;
-                    currentUser = { role: 'maker', name: maker.name, id: maker.id, station: maker.station };
-                    // Automatically select the maker's station
-                    document.getElementById(`station-${maker.station}`).checked = true;
-                    updateMakerDashboard();
-                }
+            // Simple validation
+            if (!username || !password) {
+                alert('Bitte Benutzername und Passwort eingeben');
+                return;
             }
             
-            if (authenticated) {
-                hideLoginModal();
-                showNotification('Erfolgreich eingeloggt!');
+            // In a real app, you would authenticate with Firebase
+            // For this demo, we'll simulate authentication
+            simulateLogin(username, password, role);
+        }
+        
+        // Simulate login (replace with Firebase auth in real app)
+        function simulateLogin(username, password, role) {
+            // Hide login modal
+            hideLogin();
+            
+            // Set current user
+            currentUser = {
+                username: username,
+                role: role
+            };
+            currentRole = role;
+            
+            // Show appropriate view based on role
+            showViewForRole(role);
+            
+            // Load data for the view
+            loadDataForView(role);
+            
+            // Clear login form
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+        
+        // Show appropriate view based on user role
+        function showViewForRole(role) {
+            // Hide all views first
+            document.getElementById('customerView').classList.add('hidden');
+            document.getElementById('makerView').classList.add('hidden');
+            document.getElementById('waiterView').classList.add('hidden');
+            document.getElementById('ownerView').classList.add('hidden');
+            document.getElementById('adminView').classList.add('hidden');
+            
+            // Show the correct view
+            if (role === 'customer') {
+                document.getElementById('customerView').classList.remove('hidden');
+            } else if (role === 'maker') {
+                document.getElementById('makerView').classList.remove('hidden');
+            } else if (role === 'waiter') {
+                document.getElementById('waiterView').classList.remove('hidden');
+            } else if (role === 'owner') {
+                document.getElementById('ownerView').classList.remove('hidden');
+            } else if (role === 'admin') {
+                document.getElementById('adminView').classList.remove('hidden');
+            }
+        }
+        
+        // Load data for the current view
+        function loadDataForView(role) {
+            // In a real app, you would fetch data from Firebase
+            // For this demo, we'll simulate data loading
+            
+            if (role === 'customer') {
+                // Nothing special to load for customer view
+            } else if (role === 'maker') {
+                // Load maker data
+                loadMakerData();
+            } else if (role === 'waiter') {
+                // Load waiter data
+                loadWaiterData();
+            } else if (role === 'owner' || role === 'admin') {
+                // Load owner/admin data
+                loadOwnerData();
+                if (role === 'admin') {
+                    loadAdminData();
+                }
+            }
+        }
+        
+        // Load maker data
+        function loadMakerData() {
+            // Simulate loading orders for maker
+            simulateOrdersForMaker();
+        }
+        
+        // Load waiter data
+        function loadWaiterData() {
+            // Simulate loading orders for waiter
+            simulateOrdersForWaiter();
+        }
+        
+        // Load owner data
+        function loadOwnerData() {
+            // Simulate loading data for owner
+            simulateDataForOwner();
+            
+            // Initialize charts
+            initCharts();
+        }
+        
+        // Load admin data
+        function loadAdminData() {
+            // Simulate loading data for admin
+            simulateDataForAdmin();
+        }
+        
+        // Simulate orders for maker view
+        function simulateOrdersForMaker() {
+            // This would come from Firebase in a real app
+            const orders = [
+                {
+                    id: 'CR1001',
+                    items: [
+                        { name: 'Nutella Crepe', price: 5.00 },
+                        { name: 'Cola', price: 2.50 }
+                    ],
+                    status: 'in_progress',
+                    station: 1,
+                    timestamp: new Date().getTime() - 60000 // 1 minute ago
+                },
+                {
+                    id: 'CR1002',
+                    items: [
+                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
+                    ],
+                    status: 'queued',
+                    station: 1,
+                    timestamp: new Date().getTime()
+                },
+                {
+                    id: 'CR1003',
+                    items: [
+                        { name: 'Classic Crepe', price: 4.50 },
+                        { name: 'Apfelsaft', price: 2.50 }
+                    ],
+                    status: 'queued',
+                    station: 2,
+                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
+                }
+            ];
+            
+            // Display orders based on selected station
+            updateMakerOrdersDisplay(orders);
+        }
+        
+        // Simulate orders for waiter view
+        function simulateOrdersForWaiter() {
+            // This would come from Firebase in a real app
+            const activeOrders = [
+                {
+                    id: 'CR1001',
+                    items: [
+                        { name: 'Nutella Crepe', price: 5.00 },
+                        { name: 'Cola', price: 2.50 }
+                    ],
+                    status: 'in_progress',
+                    station: 1,
+                    total: 7.50,
+                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
+                }
+            ];
+            
+            const completedOrders = [
+                {
+                    id: 'CR999',
+                    items: [
+                        { name: 'Classic Crepe', price: 4.50 },
+                        { name: 'Wasser', price: 2.00 }
+                    ],
+                    status: 'completed',
+                    station: 2,
+                    total: 6.50,
+                    timestamp: new Date().getTime() - 3600000 // 1 hour ago
+                }
+            ];
+            
+            // Display orders
+            updateWaiterOrdersDisplay(activeOrders, completedOrders);
+        }
+        
+        // Simulate data for owner view
+        function simulateDataForOwner() {
+            // This would come from Firebase in a real app
+            const orders = [
+                {
+                    id: 'CR1001',
+                    items: [
+                        { name: 'Nutella Crepe', price: 5.00 },
+                        { name: 'Cola', price: 2.50 }
+                    ],
+                    status: 'in_progress',
+                    station: 1,
+                    total: 7.50,
+                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
+                },
+                {
+                    id: 'CR1002',
+                    items: [
+                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
+                    ],
+                    status: 'queued',
+                    station: 1,
+                    total: 6.00,
+                    timestamp: new Date().getTime() - 60000 // 1 minute ago
+                },
+                {
+                    id: 'CR1003',
+                    items: [
+                        { name: 'Classic Crepe', price: 4.50 },
+                        { name: 'Apfelsaft', price: 2.50 }
+                    ],
+                    status: 'queued',
+                    station: 2,
+                    total: 7.00,
+                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
+                }
+            ];
+            
+            const users = [
+                {
+                    username: 'chef1',
+                    role: 'owner',
+                    created: new Date().getTime() - 86400000 // 1 day ago
+                },
+                {
+                    username: 'maker1',
+                    role: 'maker',
+                    created: new Date().getTime() - 43200000 // 12 hours ago
+                },
+                {
+                    username: 'waiter1',
+                    role: 'waiter',
+                    created: new Date().getTime() - 21600000 // 6 hours ago
+                }
+            ];
+            
+            // Display data
+            updateOwnerOrdersDisplay(orders);
+            updateUsersList(users);
+            
+            // Update stats
+            updateOwnerStats(orders, users);
+        }
+        
+        // Simulate data for admin view
+        function simulateDataForAdmin() {
+            // This would come from Firebase in a real app
+            const allOrders = [
+                {
+                    id: 'CR1001',
+                    items: [
+                        { name: 'Nutella Crepe', price: 5.00 },
+                        { name: 'Cola', price: 2.50 }
+                    ],
+                    status: 'in_progress',
+                    station: 1,
+                    total: 7.50,
+                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
+                },
+                {
+                    id: 'CR1002',
+                    items: [
+                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
+                    ],
+                    status: 'queued',
+                    station: 1,
+                    total: 6.00,
+                    timestamp: new Date().getTime() - 60000 // 1 minute ago
+                },
+                {
+                    id: 'CR1003',
+                    items: [
+                        { name: 'Classic Crepe', price: 4.50 },
+                        { name: 'Apfelsaft', price: 2.50 }
+                    ],
+                    status: 'queued',
+                    station: 2,
+                    total: 7.00,
+                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
+                },
+                {
+                    id: 'CR999',
+                    items: [
+                        { name: 'Classic Crepe', price: 4.50 },
+                        { name: 'Wasser', price: 2.00 }
+                    ],
+                    status: 'completed',
+                    station: 2,
+                    total: 6.50,
+                    timestamp: new Date().getTime() - 3600000 // 1 hour ago
+                },
+                {
+                    id: 'CR998',
+                    items: [
+                        { name: 'Haus-Spezial', price: 7.00 }
+                    ],
+                    status: 'completed',
+                    station: 3,
+                    total: 7.00,
+                    timestamp: new Date().getTime() - 7200000 // 2 hours ago
+                }
+            ];
+            
+            // Display all orders
+            updateAllOrdersList(allOrders);
+            
+            // Update admin stats
+            updateAdminStats(allOrders);
+        }
+        
+        // Update maker orders display
+        function updateMakerOrdersDisplay(orders) {
+            const currentOrderContainer = document.getElementById('currentOrder');
+            const noOrdersContainer = document.getElementById('noOrders');
+            const queueList = document.getElementById('queueList');
+            
+            if (currentStation) {
+                // Filter orders for current station
+                const stationOrders = orders.filter(order => order.station === currentStation);
+                const inProgressOrder = stationOrders.find(order => order.status === 'in_progress');
+                const queuedOrders = stationOrders.filter(order => order.status === 'queued');
                 
-                // Hide all views first
-                document.getElementById('customer-view').classList.add('hidden');
-                document.getElementById('owner-dashboard').classList.add('hidden');
-                document.getElementById('cashier-dashboard').classList.add('hidden');
-                document.getElementById('maker-dashboard').classList.add('hidden');
+                if (inProgressOrder) {
+                    // Show current order
+                    currentOrderContainer.classList.remove('hidden');
+                    noOrdersContainer.classList.add('hidden');
+                    
+                    document.getElementById('currentOrderNumber').textContent = inProgressOrder.id;
+                    
+                    const orderDetails = document.getElementById('orderDetails');
+                    orderDetails.innerHTML = '';
+                    
+                    inProgressOrder.items.forEach(item => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'flex justify-between py-1 border-b border-yellow-100';
+                        itemElement.innerHTML = `
+                            <span>${item.name}</span>
+                            <span class="font-bold">${item.price.toFixed(2)}€</span>
+                        `;
+                        orderDetails.appendChild(itemElement);
+                    });
+                    
+                    // Calculate time elapsed
+                    const elapsedMinutes = Math.floor((new Date().getTime() - inProgressOrder.timestamp) / 60000);
+                    document.getElementById('stationStatus').textContent = `In Bearbeitung (${elapsedMinutes} min)`;
+                } else {
+                    // No current order
+                    currentOrderContainer.classList.add('hidden');
+                    
+                    if (queuedOrders.length > 0) {
+                        noOrdersContainer.classList.add('hidden');
+                    } else {
+                        noOrdersContainer.classList.remove('hidden');
+                    }
+                }
                 
-                // Show the appropriate view
-                if (currentUser.role === 'owner') {
-                    document.getElementById('owner-dashboard').classList.remove('hidden');
-                    updateOwnerDashboard();
-                } else if (currentUser.role === 'cashier') {
-                    document.getElementById('cashier-dashboard').classList.remove('hidden');
-                    updateCashierActiveOrders();
-                } else if (currentUser.role === 'maker') {
-                    document.getElementById('maker-dashboard').classList.remove('hidden');
-                    updateMakerDashboard();
+                // Update queue
+                queueList.innerHTML = '';
+                
+                if (queuedOrders.length > 0) {
+                    queuedOrders.forEach(order => {
+                        const orderElement = document.createElement('div');
+                        orderElement.className = 'order-card bg-yellow-50 p-3 rounded-lg';
+                        orderElement.innerHTML = `
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold">#${order.id}</span>
+                                <span class="text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded">Wartend</span>
+                            </div>
+                            <div class="text-sm text-yellow-700">
+                                ${order.items.map(item => item.name).join(', ')}
+                            </div>
+                        `;
+                        queueList.appendChild(orderElement);
+                    });
+                } else {
+                    const emptyElement = document.createElement('div');
+                    emptyElement.className = 'text-center text-yellow-600 py-4';
+                    emptyElement.textContent = 'Keine Bestellungen in der Warteschlange';
+                    queueList.appendChild(emptyElement);
                 }
             } else {
-                showNotification('Falscher Benutzername oder Passwort!', 'error');
-            }
-        }
-        
-        // Logout function
-        function logout() {
-            currentUser = null;
-            showNotification('Erfolgreich ausgeloggt!');
-            
-            // Hide all dashboards
-            document.getElementById('owner-dashboard').classList.add('hidden');
-            document.getElementById('cashier-dashboard').classList.add('hidden');
-            document.getElementById('maker-dashboard').classList.add('hidden');
-            
-            // Show customer view
-            document.getElementById('customer-view').classList.remove('hidden');
-        }
-        
-        // Show add waiter modal
-        function showAddWaiterModal() {
-            document.getElementById('add-waiter-modal').classList.remove('hidden');
-        }
-        
-        // Hide add waiter modal
-        function hideAddWaiterModal() {
-            document.getElementById('add-waiter-modal').classList.add('hidden');
-            document.getElementById('waiter-name').value = '';
-            document.getElementById('waiter-username').value = '';
-            document.getElementById('waiter-password').value = '';
-        }
-        
-        // Add new waiter
-        function addWaiter() {
-            const name = document.getElementById('waiter-name').value;
-            const username = document.getElementById('waiter-username').value;
-            const password = document.getElementById('waiter-password').value;
-            
-            if (!name || !username || !password) {
-                showNotification('Bitte alle Felder ausfüllen!', 'error');
-                return;
-            }
-            
-            // Check if username already exists
-            if (waiters.some(w => w.username === username)) {
-                showNotification('Benutzername bereits vergeben!', 'error');
-                return;
-            }
-            
-            const newId = waiters.length > 0 ? Math.max(...waiters.map(w => w.id)) + 1 : 1;
-            waiters.push({ id: newId, name, username, password });
-            
-            hideAddWaiterModal();
-            updateWaitersList();
-            showNotification('Kellner erfolgreich hinzugefügt!');
-        }
-        
-        // Delete waiter
-        function deleteWaiter(id) {
-            waiters = waiters.filter(w => w.id !== id);
-            updateWaitersList();
-            showNotification('Kellner erfolgreich gelöscht!');
-        }
-        
-        // Update waiters list in owner dashboard
-        function updateWaitersList() {
-            const waitersList = document.getElementById('waiters-list');
-            waitersList.innerHTML = '';
-            
-            if (waiters.length === 0) {
-                waitersList.innerHTML = '<p class="text-gray-500 text-center py-4">Keine Kellner vorhanden</p>';
-                return;
-            }
-            
-            waiters.forEach(waiter => {
-                const waiterElement = document.createElement('div');
-                waiterElement.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
-                waiterElement.innerHTML = `
-                    <div>
-                        <span class="font-medium">${waiter.name}</span>
-                        <span class="text-sm text-gray-500 ml-2">(${waiter.username})</span>
-                    </div>
-                    <button onclick="deleteWaiter(${waiter.id})" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                `;
-                waitersList.appendChild(waiterElement);
-            });
-        }
-        
-        // Show custom crepe modal
-        function showCustomCrepeModal() {
-            document.getElementById('custom-crepe-modal').classList.remove('hidden');
-            updateCustomCrepePrice();
-        }
-        
-        // Hide custom crepe modal
-        function hideCustomCrepeModal() {
-            document.getElementById('custom-crepe-modal').classList.add('hidden');
-        }
-        
-        // Update custom crepe price based on selections
-        function updateCustomCrepePrice() {
-            let price = 0;
-            
-            // Base price
-            const base = document.querySelector('input[name="crepe-base"]:checked').value;
-            price += base === 'normal' ? 3.50 : 4.00;
-            
-            // Topping price
-            const topping = document.querySelector('input[name="crepe-topping"]:checked').value;
-            if (topping === 'nutella') price += 1.00;
-            else if (topping === 'cheese') price += 1.20;
-            else if (topping === 'jam') price += 0.80;
-            else if (topping === 'ham') price += 1.50;
-            
-            // Extras
-            if (document.getElementById('extra-banana').checked) price += 1.00;
-            if (document.getElementById('extra-strawberry').checked) price += 1.50;
-            if (document.getElementById('extra-spinach').checked) price += 1.00;
-            if (document.getElementById('extra-mushroom').checked) price += 1.20;
-            if (document.getElementById('extra-whipped').checked) price += 1.00;
-            if (document.getElementById('extra-icecream').checked) price += 1.50;
-            
-            document.getElementById('custom-crepe-price').textContent = price.toFixed(2);
-        }
-        
-        // Add custom crepe to order
-        function addCustomCrepeToOrder() {
-            let name = "Custom Crepe (";
-            const base = document.querySelector('input[name="crepe-base"]:checked').value;
-            const topping = document.querySelector('input[name="crepe-topping"]:checked').value;
-            
-            name += base === 'normal' ? 'Normal' : 'Schoko';
-            name += ", ";
-            
-            if (topping === 'nutella') name += 'Nutella';
-            else if (topping === 'cheese') name += 'Käse';
-            else if (topping === 'jam') name += 'Marmelade';
-            else if (topping === 'ham') name += 'Schinken';
-            
-            // Add extras
-            const extras = [];
-            if (document.getElementById('extra-banana').checked) extras.push('Banane');
-            if (document.getElementById('extra-strawberry').checked) extras.push('Erdbeer');
-            if (document.getElementById('extra-spinach').checked) extras.push('Spinat');
-            if (document.getElementById('extra-mushroom').checked) extras.push('Pilze');
-            if (document.getElementById('extra-whipped').checked) extras.push('Sahne');
-            if (document.getElementById('extra-icecream').checked) extras.push('Eis');
-            
-            if (extras.length > 0) {
-                name += ", " + extras.join(", ");
-            }
-            
-            name += ")";
-            
-            const price = parseFloat(document.getElementById('custom-crepe-price').textContent);
-            
-            addToOrder(name, price);
-            hideCustomCrepeModal();
-        }
-        
-        // Add predefined crepe to order
-        function addPredefinedCrepe(name, price) {
-            addToOrder(name, price);
-        }
-        
-        // Add extra to order
-        function addExtra(name, price) {
-            addToOrder(`+ ${name}`, price);
-        }
-        
-        // Add item to current order
-        function addToOrder(name, price) {
-            currentOrder.push({ name, price });
-            updateCurrentOrderDisplay();
-        }
-        
-        // Remove item from current order
-        function removeFromOrder(index) {
-            currentOrder.splice(index, 1);
-            updateCurrentOrderDisplay();
-        }
-        
-        // Update current order display
-        function updateCurrentOrderDisplay() {
-            const orderItemsContainer = document.getElementById('current-order-items');
-            
-            if (currentOrder.length === 0) {
-                orderItemsContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Fügen Sie Crepes hinzu</p>';
-                document.getElementById('subtotal').textContent = '0.00';
-                document.getElementById('tax').textContent = '0.00';
-                document.getElementById('total').textContent = '0.00';
-                document.getElementById('order-total').textContent = '0.00';
-                return;
-            }
-            
-            orderItemsContainer.innerHTML = '';
-            
-            let subtotal = 0;
-            
-            currentOrder.forEach((item, index) => {
-                subtotal += item.price;
+                // No station selected
+                currentOrderContainer.classList.add('hidden');
+                noOrdersContainer.classList.remove('hidden');
+                queueList.innerHTML = '';
                 
-                const itemElement = document.createElement('div');
-                itemElement.className = 'flex justify-between items-center py-2 border-b';
-                itemElement.innerHTML = `
-                    <div class="flex-1 truncate">${item.name}</div>
-                    <div class="flex items-center">
-                        <span class="font-medium mr-4">€${item.price.toFixed(2)}</span>
-                        <button onclick="removeFromOrder(${index})" class="text-red-500 hover:text-red-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `;
-                orderItemsContainer.appendChild(itemElement);
-            });
-            
-            const tax = subtotal * 0.07;
-            const total = subtotal + tax;
-            
-            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
-            document.getElementById('tax').textContent = tax.toFixed(2);
-            document.getElementById('total').textContent = total.toFixed(2);
-            document.getElementById('order-total').textContent = total.toFixed(2);
+                const emptyElement = document.createElement('div');
+                emptyElement.className = 'text-center text-yellow-600 py-4';
+                emptyElement.textContent = 'Bitte wählen Sie eine Station aus';
+                queueList.appendChild(emptyElement);
+            }
         }
         
-        // Submit order
-        function submitOrder() {
-            if (currentOrder.length === 0) {
-                showNotification('Bestellung ist leer!', 'error');
-                return;
+        // Update waiter orders display
+        function updateWaiterOrdersDisplay(activeOrders, completedOrders) {
+            const currentOrderTotal = document.getElementById('currentOrderTotal');
+            const currentOrderItems = document.getElementById('currentOrderItems');
+            const activeOrdersContainer = document.getElementById('activeOrders');
+            const completedOrdersContainer = document.getElementById('completedOrders');
+            
+            // Update current order total
+            const total = currentOrder.reduce((sum, item) => sum + item.price, 0);
+            currentOrderTotal.textContent = `${total.toFixed(2)}€`;
+            
+            // Update current order items
+            currentOrderItems.innerHTML = '';
+            
+            if (currentOrder.length > 0) {
+                currentOrder.forEach((item, index) => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex justify-between items-center py-2 border-b border-yellow-100';
+                    itemElement.innerHTML = `
+                        <span>${item.name}</span>
+                        <div class="flex items-center">
+                            <span class="font-bold mr-4">${item.price.toFixed(2)}€</span>
+                            <button onclick="removeOrderItem(${index})" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    currentOrderItems.appendChild(itemElement);
+                });
+            } else {
+                const emptyElement = document.createElement('p');
+                emptyElement.className = 'text-yellow-600 text-center py-4';
+                emptyElement.textContent = 'Noch keine Artikel hinzugefügt';
+                currentOrderItems.appendChild(emptyElement);
             }
             
-            const newOrder = {
-                id: currentOrderNumber++,
-                items: [...currentOrder],
-                status: "waiting",
-                station: Math.floor(Math.random() * 3) + 1, // Random station for demo
-                time: new Date(),
-                position: orders.filter(o => o.status === "waiting").length + 1
-            };
-            
-            orders.push(newOrder);
-            orderQueue.push(newOrder);
-            currentOrder = [];
-            
-            updateCurrentOrderDisplay();
-            updateCashierActiveOrders();
-            updateOrderQueueDisplay();
-            
-            showNotification(`Bestellung #${newOrder.id} aufgegeben!`);
-        }
-        
-        // Update cashier's active orders display
-        function updateCashierActiveOrders() {
-            const activeOrdersContainer = document.getElementById('cashier-active-orders');
+            // Update active orders
             activeOrdersContainer.innerHTML = '';
             
-            const activeOrders = orders.filter(order => order.status !== "completed");
-            
-            if (activeOrders.length === 0) {
-                activeOrdersContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Keine aktiven Bestellungen</p>';
-                return;
-            }
-            
-            activeOrders.forEach(order => {
-                const orderElement = document.createElement('div');
-                orderElement.className = 'order-card bg-white p-4 rounded-lg shadow';
-                
-                let itemsHtml = '';
-                order.items.forEach(item => {
-                    itemsHtml += `<div class="flex justify-between py-1">
-                        <span>${item.name}</span>
-                        <span class="font-medium">€${item.price.toFixed(2)}</span>
-                    </div>`;
-                });
-                
-                const total = order.items.reduce((sum, item) => sum + item.price, 0);
-                const statusClass = order.status === "in-progress" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800";
-                
-                orderElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold">Bestellung #${order.id}</span>
-                        <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${order.status === "in-progress" ? "In Bearbeitung" : "Wartend"}</span>
-                    </div>
-                    <div class="mb-2">
-                        ${itemsHtml}
-                    </div>
-                    <div class="flex justify-between border-t pt-2">
-                        <span class="font-medium">Gesamt:</span>
-                        <span class="font-bold">€${total.toFixed(2)}</span>
-                    </div>
-                `;
-                
-                activeOrdersContainer.appendChild(orderElement);
-            });
-        }
-        
-        // Update maker dashboard with current order
-        function updateMakerDashboard() {
-            const station = document.querySelector('input[name="maker-station"]:checked').value;
-            const currentOrderContainer = document.getElementById('current-maker-order');
-            const completeBtn = document.getElementById('complete-order-btn');
-            const skipBtn = document.getElementById('skip-order-btn');
-            
-            const order = orders.find(o => o.station === parseInt(station) && o.status === "in-progress");
-            
-            if (order) {
-                let itemsHtml = '';
-                order.items.forEach(item => {
-                    itemsHtml += `<div class="flex justify-between py-1">
-                        <span>${item.name}</span>
-                        <span class="font-medium">€${item.price.toFixed(2)}</span>
-                    </div>`;
-                });
-                
-                currentOrderContainer.innerHTML = `
-                    <div class="text-lg font-bold mb-2">Bestellung #${order.id}</div>
-                    <div class="mb-4">
-                        ${itemsHtml}
-                    </div>
-                    <div class="flex justify-between border-t pt-2 font-bold">
-                        <span>Gesamt:</span>
-                        <span>€${order.items.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
-                    </div>
-                `;
-                
-                completeBtn.classList.remove('hidden');
-                skipBtn.classList.remove('hidden');
-            } else {
-                currentOrderContainer.innerHTML = 'Keine aktive Bestellung für diese Station';
-                completeBtn.classList.add('hidden');
-                skipBtn.classList.add('hidden');
-            }
-            
-            updateOrderQueueDisplay();
-        }
-        
-        // Update order queue display for maker
-        function updateOrderQueueDisplay() {
-            const queueContainer = document.getElementById('maker-order-queue');
-            queueContainer.innerHTML = '';
-            
-            if (orderQueue.length === 0) {
-                queueContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Keine Bestellungen in der Warteschlange</p>';
-                return;
-            }
-            
-            orderQueue.forEach((order, index) => {
-                const orderElement = document.createElement('div');
-                orderElement.className = 'order-card bg-white p-4 rounded-lg shadow';
-                
-                let itemsHtml = '';
-                order.items.forEach(item => {
-                    itemsHtml += `<div class="flex justify-between py-1">
-                        <span class="text-sm">${item.name}</span>
-                        <span class="text-sm font-medium">€${item.price.toFixed(2)}</span>
-                    </div>`;
-                });
-                
-                orderElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-medium">#${order.id} (Station ${order.station})</span>
-                        <span class="text-xs bg-gray-100 px-2 py-1 rounded">Position ${index + 1}</span>
-                    </div>
-                    <div class="mb-2 text-sm">
-                        ${itemsHtml}
-                    </div>
-                    <button onclick="assignOrderToStation(${order.id})" class="w-full mt-2 pink-gradient text-white text-sm font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                        Übernehmen
-                    </button>
-                `;
-                
-                queueContainer.appendChild(orderElement);
-            });
-        }
-        
-        // Assign order to station
-        function assignOrderToStation(orderId) {
-            const orderIndex = orders.findIndex(o => o.id === orderId);
-            if (orderIndex !== -1) {
-                orders[orderIndex].status = "in-progress";
-                orderQueue = orderQueue.filter(o => o.id !== orderId);
-                updateOrderQueueDisplay();
-                updateMakerDashboard();
-                showNotification(`Bestellung #${orderId} übernommen!`);
-            }
-        }
-        
-        // Mark order as done
-        function markOrderAsDone() {
-            const station = document.querySelector('input[name="maker-station"]:checked').value;
-            const orderIndex = orders.findIndex(o => o.station === parseInt(station) && o.status === "in-progress");
-            
-            if (orderIndex !== -1) {
-                orders[orderIndex].status = "completed";
-                showNotification(`Bestellung #${orders[orderIndex].id} abgeschlossen!`);
-                updateMakerDashboard();
-                updateCashierActiveOrders();
-            }
-        }
-        
-        // Skip current order
-        function skipOrder() {
-            const station = document.querySelector('input[name="maker-station"]:checked').value;
-            const orderIndex = orders.findIndex(o => o.station === parseInt(station) && o.status === "in-progress");
-            
-            if (orderIndex !== -1) {
-                orders[orderIndex].status = "waiting";
-                orderQueue.push(orders[orderIndex]);
-                showNotification(`Bestellung #${orders[orderIndex].id} übersprungen!`);
-                updateMakerDashboard();
-            }
-        }
-        
-        // Update owner dashboard
-        function updateOwnerDashboard() {
-            const activeOrders = orders.filter(order => order.status !== "completed");
-            document.getElementById('active-orders').textContent = activeOrders.length;
-            
-            // Update current orders list
-            const ordersList = document.getElementById('current-orders-list');
-            ordersList.innerHTML = '';
-            
-            if (activeOrders.length === 0) {
-                ordersList.innerHTML = '<p class="text-gray-500 text-center py-4">Keine aktiven Bestellungen</p>';
-                return;
-            }
-            
-            activeOrders.forEach(order => {
-                const orderElement = document.createElement('div');
-                orderElement.className = 'order-card bg-white p-4 rounded-lg shadow';
-                
-                let itemsHtml = '';
-                order.items.forEach(item => {
-                    itemsHtml += `<div class="flex justify-between py-1">
-                        <span>${item.name}</span>
-                        <span class="font-medium">€${item.price.toFixed(2)}</span>
-                    </div>`;
-                });
-                
-                const total = order.items.reduce((sum, item) => sum + item.price, 0);
-                const statusClass = order.status === "in-progress" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800";
-                
-                orderElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold">Bestellung #${order.id}</span>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${order.status === "in-progress" ? "In Bearbeitung" : "Wartend"}</span>
-                            <span class="text-xs px-2 py-1 rounded-full bg-gray-100">Station ${order.station}</span>
+            if (activeOrders.length > 0) {
+                activeOrders.forEach(order => {
+                    const orderElement = document.createElement('div');
+                    orderElement.className = 'order-card bg-white border border-yellow-200 p-4 rounded-lg';
+                    orderElement.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold">#${order.id}</span>
+                            <span class="text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded">In Bearbeitung</span>
                         </div>
-                    </div>
-                    <div class="mb-2">
-                        ${itemsHtml}
-                    </div>
-                    <div class="flex justify-between border-t pt-2">
-                        <span class="font-medium">Gesamt:</span>
-                        <span class="font-bold">€${total.toFixed(2)}</span>
-                    </div>
-                `;
-                
-                ordersList.appendChild(orderElement);
-            });
-        }
-        
-        // Check order status for customer
-        function checkOrderStatus() {
-            const orderNumber = document.getElementById('order-number').value;
-            
-            if (!orderNumber) {
-                showNotification('Bitte Bestellnummer eingeben!', 'error');
-                return;
-            }
-            
-            const order = orders.find(o => o.id === parseInt(orderNumber));
-            const statusContainer = document.getElementById('order-status');
-            
-            if (!order) {
-                statusContainer.classList.remove('hidden');
-                document.getElementById('order-position').textContent = 'Bestellung nicht gefunden';
-                document.getElementById('order-time').textContent = '';
-                document.getElementById('order-alert').classList.add('hidden');
-                return;
-            }
-            
-            statusContainer.classList.remove('hidden');
-            
-            if (order.status === "completed") {
-                document.getElementById('order-position').textContent = 'Ihre Bestellung ist fertig!';
-                document.getElementById('order-time').textContent = '';
-                document.getElementById('order-alert').classList.add('hidden');
+                        <div class="text-sm text-yellow-700 mb-2">
+                            ${order.items.map(item => item.name).join(', ')}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold">${order.total.toFixed(2)}€</span>
+                            <button onclick="viewOrderDetails('${order.id}')" class="text-yellow-700 hover:text-yellow-900 text-sm">
+                                <i class="fas fa-eye mr-1"></i> Details
+                            </button>
+                        </div>
+                    `;
+                    activeOrdersContainer.appendChild(orderElement);
+                });
             } else {
-                const position = orders.filter(o => o.status === "waiting" && o.time < order.time).length;
-                const timeEstimate = position * 5; // 5 minutes per order
-                
-                document.getElementById('order-position').textContent = `Bestellungen vor Ihnen: ${position}`;
-                document.getElementById('order-time').textContent = `Geschätzte Wartezeit: ${timeEstimate} Minuten`;
-                
-                if (timeEstimate <= 5) {
-                    document.getElementById('order-alert').classList.remove('hidden');
-                } else {
-                    document.getElementById('order-alert').classList.add('hidden');
-                }
+                const emptyElement = document.createElement('p');
+                emptyElement.className = 'text-yellow-600 text-center py-4';
+                emptyElement.textContent = 'Keine aktiven Bestellungen';
+                activeOrdersContainer.appendChild(emptyElement);
             }
-        }
-        
-        // Show notification
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            notification.querySelector('#notification-message').textContent = message;
             
-            // Set color based on type
-            if (type === 'error') {
-                notification.classList.remove('bg-green-500');
-                notification.classList.add('bg-red-500');
+            // Update completed orders
+            completedOrdersContainer.innerHTML = '';
+            
+            if (completedOrders.length > 0) {
+                completedOrders.forEach(order => {
+                    const orderElement = document.createElement('div');
+                    orderElement.className = 'order-card bg-white border border-green-200 p-4 rounded-lg';
+                    orderElement.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold">#${order.id}</span>
+                            <span class="text-sm bg-green-200 text-green-800 px-2 py-1 rounded">Fertig</span>
+                        </div>
+                        <div class="text-sm text-yellow-700 mb-2">
+                            ${order.items.map(item => item.name).join(', ')}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold">${order.total.toFixed(2)}€</span>
+                            <button onclick="viewOrderDetails('${order.id}')" class="text-yellow-700 hover:text-yellow-900 text-sm">
+                                <i class="fas fa-eye mr-1"></i> Details
+                            </button>
+                        </div>
+                    `;
+                    completedOrdersContainer.appendChild(orderElement);
+                });
             } else {
-                notification.classList.remove('bg-red-500');
-                notification.classList.add('bg-green-500');
+                const emptyElement = document.createElement('p');
+                emptyElement.className = 'text-yellow-600 text-center py-4';
+                emptyElement.textContent = 'Keine fertigen Bestellungen';
+                completedOrdersContainer.appendChild(emptyElement);
             }
-            
-            notification.classList.remove('hidden');
-            
-            // Hide after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('hidden');
-            }, 3000);
         }
         
-        // Event listener for maker station change
-        document.querySelectorAll('input[name="maker-station"]').forEach(input => {
-            input.addEventListener('change', updateMakerDashboard);
-        });
-    </script>
-</body>
+        // Update owner orders display
+        function updateOwnerOrdersDisplay(orders) {
+            const ownerOrdersList = document.getElementById('ownerOrdersList');
+            
+            ownerOrdersList.innerHTML = '';
+            
+            if (orders.length > 0) {
+                orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    
+                    // Format timestamp
+                    const orderDate = new Date(order.timestamp);
+                    const timeString = orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-800">${order.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-700">
+                            ${order.items.slice(0, 2).map(item => item.name).join(', ')}${order.items.length > 2 ? '...' : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-700">Station ${order.station}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span
 </html>

@@ -3,1190 +3,1585 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crêpe Management System</title>
+    <title>Luxury Crêpe Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
+
+        :root {
+            --primary-color: #2c5e50;
+            --secondary-color: #6b8c7d;
+            --accent-color: #d4af37;
+            --light-color: #f5f5f0;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--light-color);
+            color: #333;
         }
-        .floating {
-            animation: float 3s ease-in-out infinite;
+
+        .luxury-font {
+            font-family: 'Playfair Display', serif;
         }
+
+        .luxury-bg {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .luxury-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-luxury {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(44, 94, 80, 0.3);
+        }
+
+            .btn-luxury:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(44, 94, 80, 0.4);
+            }
+
+            .btn-luxury:active {
+                transform: translateY(0);
+            }
+
+        .btn-accent {
+            background: var(--accent-color);
+            color: #333;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+            .btn-accent:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+            }
+
+        .crepe-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+
+            .crepe-3d:hover {
+                transform: rotateY(10deg) rotateX(5deg) translateY(-5px);
+            }
+
         .pulse {
             animation: pulse 2s infinite;
         }
-        .slide-in {
-            animation: slideIn 0.5s forwards;
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+
+        .floating {
+            animation: floating 6s ease-in-out infinite;
         }
-        .bg-cream {
-            background-color: #FFF8E1;
+
+        @keyframes floating {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
         }
-        .bg-light-yellow {
-            background-color: #FFF9C4;
-        }
-        .transition-all {
+
+        .order-card {
             transition: all 0.3s ease;
         }
-        .max-h-0 {
-            max-height: 0;
-            overflow: hidden;
+
+            .order-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        .max-h-screen {
-            max-height: 100vh;
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--primary-color);
+            }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
-<body class="bg-cream min-h-screen font-sans">
-    <!-- Firebase Config -->
+<body class="min-h-screen">
+    <!-- Firebase Configuration -->
     <script>
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyDx2Z3Hj7Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4",
-            authDomain: "crepe-management.firebaseapp.com",
-            databaseURL: "https://crepe-management-default-rtdb.firebaseio.com",
-            projectId: "crepe-management",
-            storageBucket: "crepe-management.appspot.com",
+            apiKey: "AIzaSyDEXAMPLEEXAMPLEEXAMPLE",
+            authDomain: "your-project-id.firebaseapp.com",
+            databaseURL: "https://your-project-id.firebaseio.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
             messagingSenderId: "123456789012",
             appId: "1:123456789012:web:abcdef1234567890abcdef"
         };
-        
+
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        const auth = firebase.auth();
+
+        // Global variables
+        let currentUser = null;
+        let currentRole = null;
+        let orders = [];
+        let users = [];
+        let menuItems = [
+            { id: 1, name: "Classic Crêpe", price: 5.50, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Sugar"] },
+            { id: 2, name: "Chocolate Dream", price: 7.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Chocolate", "Whipped Cream"] },
+            { id: 3, name: "Berry Bliss", price: 8.50, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Mixed Berries", "Powdered Sugar"] },
+            { id: 4, name: "Savory Delight", price: 9.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Ham", "Cheese", "Mushrooms"] },
+            { id: 5, name: "Nutella Supreme", price: 8.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Nutella", "Banana", "Almonds"] }
+        ];
+
+        // Custom ingredients for custom crêpes
+        const customIngredients = [
+            { name: "Chocolate", price: 1.50 },
+            { name: "Strawberries", price: 2.00 },
+            { name: "Banana", price: 1.00 },
+            { name: "Nutella", price: 1.80 },
+            { name: "Whipped Cream", price: 1.20 },
+            { name: "Caramel", price: 1.50 },
+            { name: "Almonds", price: 1.20 },
+            { name: "Cheese", price: 1.50 },
+            { name: "Ham", price: 2.50 },
+            { name: "Mushrooms", price: 1.80 }
+        ];
     </script>
 
     <!-- Main Container -->
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-amber-900">Crêpe Management System</h1>
+        <header class="flex justify-between items-center mb-12">
+            <div class="flex items-center">
+                <div class="w-16 h-16 rounded-full luxury-bg flex items-center justify-center text-white text-2xl luxury-font mr-4 floating">
+                    <i class="fas fa-pancakes"></i>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold luxury-font text-gray-800">Luxury Crêpe</h1>
+            </div>
+
+            <!-- Three-dot menu -->
             <div class="relative">
-                <button id="menuToggle" class="p-2 rounded-full hover:bg-amber-200 transition-all">
-                    <i class="fas fa-ellipsis-v text-amber-800 text-xl"></i>
+                <button id="menuBtn" class="w-12 h-12 rounded-full luxury-bg flex items-center justify-center text-white text-xl hover:bg-opacity-90 transition-all">
+                    <i class="fas fa-ellipsis-v"></i>
                 </button>
-                <div id="authMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                    <button onclick="showLogin('customer')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Kundenbereich</button>
-                    <button onclick="showLogin('waiter')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Kellner Login</button>
-                    <button onclick="showLogin('maker')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Hersteller Login</button>
-                    <button onclick="showLogin('owner')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Owner Login</button>
-                    <button onclick="showLogin('admin')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Admin Login</button>
+
+                <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 py-1 luxury-card">
+                    <a href="#" id="customerBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Kundenbereich</a>
+                    <a href="#" id="loginBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Anmelden</a>
+                    <div id="logoutBtnContainer" class="hidden">
+                        <a href="#" id="logoutBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Abmelden</a>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- Customer Section (Default View) -->
-        <section id="customerSection" class="bg-white rounded-lg shadow-md p-6 mb-8 transition-all">
-            <div class="text-center mb-8">
-                <div class="floating inline-block mb-4">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2965/2965574.png" alt="Crêpe" class="w-24 h-24">
+        <!-- Main Content Area -->
+        <main>
+            <!-- Customer Section (Default View) -->
+            <section id="customerSection" class="mb-16">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl luxury-font font-bold text-gray-800 mb-4">Ihre Bestellung verfolgen</h2>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Geben Sie Ihre Bestellnummer ein, um den Status Ihrer Crêpe-Bestellung zu sehen.</p>
                 </div>
-                <h2 class="text-2xl font-bold text-amber-900 mb-2">Willkommen beim Crêpe Stand!</h2>
-                <p class="text-amber-800">Überprüfen Sie den Status Ihrer Bestellung</p>
-            </div>
-            
-            <div class="max-w-md mx-auto">
-                <div class="mb-4">
-                    <label for="orderNumber" class="block text-amber-800 mb-2">Ihre Bestellnummer:</label>
-                    <input type="text" id="orderNumber" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <button onclick="checkOrderStatus()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition-all pulse">
-                    Status prüfen <i class="fas fa-search ml-2"></i>
-                </button>
-            </div>
-            
-            <div id="orderStatus" class="hidden mt-8 p-4 bg-amber-50 rounded-lg">
-                <h3 class="text-xl font-bold text-amber-900 mb-4">Bestellstatus</h3>
-                <div class="flex justify-between mb-2">
-                    <span class="text-amber-800">Bestellnummer:</span>
-                    <span id="statusOrderNumber" class="font-bold">#12345</span>
-                </div>
-                <div class="flex justify-between mb-2">
-                    <span class="text-amber-800">Bestellung:</span>
-                    <span id="statusOrderItems" class="font-bold">Crêpe mit Nutella</span>
-                </div>
-                <div class="flex justify-between mb-2">
-                    <span class="text-amber-800">Position in Warteschlange:</span>
-                    <span id="statusQueuePosition" class="font-bold">3</span>
-                </div>
-                <div class="flex justify-between mb-4">
-                    <span class="text-amber-800">Geschätzte Wartezeit:</span>
-                    <span id="statusWaitTime" class="font-bold">15 Minuten</span>
-                </div>
-                <div id="readyAlert" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
-                    <p class="font-bold">Ihre Bestellung ist fertig!</p>
-                    <p>Bitte kommen Sie zum Crêpe Stand.</p>
-                </div>
-                <div id="almostReadyAlert" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
-                    <p class="font-bold">Ihre Bestellung wird gleich fertig!</p>
-                    <p>Bitte machen Sie sich in 5 Minuten auf den Weg zum Crêpe Stand.</p>
-                </div>
-            </div>
-        </section>
 
-        <!-- Login Modals -->
-        <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="loginTitle" class="text-xl font-bold text-amber-900">Login</h3>
-                    <button onclick="hideLogin()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="mb-4">
-                    <label for="loginEmail" class="block text-amber-800 mb-2">E-Mail:</label>
-                    <input type="email" id="loginEmail" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <div class="mb-6">
-                    <label for="loginPassword" class="block text-amber-800 mb-2">Passwort:</label>
-                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <button id="loginButton" onclick="login()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                    Einloggen
-                </button>
-                <div id="makerStationSelection" class="hidden mt-4">
-                    <p class="text-amber-800 mb-2">Wählen Sie Ihre Station:</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="selectMakerStation(1)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 1</button>
-                        <button onclick="selectMakerStation(2)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 2</button>
-                        <button onclick="selectMakerStation(3)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 3</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Waiter Dashboard -->
-        <section id="waiterSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-amber-900">Kellner Dashboard</h2>
-                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Vordefinierte Crêpes</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button onclick="addToOrder('Nutella Crêpe', 3.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
-                            <span>Nutella Crêpe</span>
-                            <span class="font-bold">€3.50</span>
-                        </button>
-                        <button onclick="addToOrder('Erdbeer Crêpe', 4.00)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
-                            <span>Erdbeer Crêpe</span>
-                            <span class="font-bold">€4.00</span>
-                        </button>
-                        <button onclick="addToOrder('Zimt-Zucker', 2.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
-                            <span>Zimt-Zucker</span>
-                            <span class="font-bold">€2.50</span>
-                        </button>
-                        <button onclick="addToOrder('Banane-Nutella', 4.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
-                            <span>Banane-Nutella</span>
-                            <span class="font-bold">€4.50</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Aktuelle Bestellung</h3>
-                    <div id="currentOrderItems" class="mb-4 max-h-48 overflow-y-auto">
-                        <!-- Order items will be added here -->
-                    </div>
-                    <div class="border-t border-amber-200 pt-2 mb-4">
-                        <div class="flex justify-between font-bold text-amber-800">
-                            <span>Gesamt:</span>
-                            <span id="orderTotal">€0.00</span>
+                <div class="flex justify-center">
+                    <div class="w-full max-w-md luxury-card p-8">
+                        <div class="mb-8 text-center">
+                            <div class="w-32 h-32 mx-auto mb-6 flex items-center justify-center luxury-bg rounded-full text-white text-6xl crepe-3d">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <h3 class="text-2xl luxury-font font-semibold text-gray-800">Bestellnummer eingeben</h3>
                         </div>
-                    </div>
-                    <button onclick="placeOrder()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                        Bestellung aufgeben <i class="fas fa-paper-plane ml-2"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="mt-6 bg-amber-50 p-4 rounded-lg">
-                <h3 class="text-lg font-bold text-amber-800 mb-4">Eigene Crêpe erstellen</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-amber-800 mb-1">Basis:</label>
-                        <select id="baseSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <option value="Weizen">Weizen (€2.00)</option>
-                            <option value="Dinkel">Dinkel (€2.50)</option>
-                            <option value="Buchweizen">Buchweizen (€3.00)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-amber-800 mb-1">Belag:</label>
-                        <select id="toppingSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <option value="Nutella">Nutella (€1.50)</option>
-                            <option value="Erdbeeren">Erdbeeren (€2.00)</option>
-                            <option value="Bananen">Bananen (€1.50)</option>
-                            <option value="Zimt-Zucker">Zimt-Zucker (€0.50)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-amber-800 mb-1">Extras:</label>
-                        <select id="extraSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <option value="Keine">Keine Extras</option>
-                            <option value="Schlagsahne">Schlagsahne (€0.80)</option>
-                            <option value="Eis">Eis (€1.50)</option>
-                            <option value="Nüsse">Nüsse (€1.00)</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="addCustomCrepe()" class="mt-4 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                    Zum Warenkorb hinzufügen <i class="fas fa-plus ml-2"></i>
-                </button>
-            </div>
-        </section>
 
-        <!-- Maker Dashboard -->
-        <section id="makerSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-amber-900">Hersteller Dashboard</h2>
-                    <p id="makerStationInfo" class="text-amber-700">Station: <span id="currentStation">1</span></p>
-                </div>
-                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
-                </button>
-            </div>
-            
-            <div id="currentOrderContainer" class="bg-amber-50 p-4 rounded-lg mb-4">
-                <h3 class="text-lg font-bold text-amber-800 mb-4">Aktuelle Bestellung</h3>
-                <div id="currentOrderDetails">
-                    <p class="text-center text-amber-700 py-8">Keine aktive Bestellung</p>
-                </div>
-                <div class="flex justify-between mt-4">
-                    <button onclick="markOrderAsDone()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                        Fertigstellen <i class="fas fa-check ml-2"></i>
-                    </button>
-                    <button onclick="skipOrder()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                        Überspringen <i class="fas fa-forward ml-2"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="bg-amber-50 p-4 rounded-lg">
-                <h3 class="text-lg font-bold text-amber-800 mb-4">Warteschlange</h3>
-                <div id="orderQueue" class="space-y-2 max-h-64 overflow-y-auto">
-                    <!-- Orders will be added here -->
-                </div>
-            </div>
-        </section>
+                        <div class="mb-6">
+                            <label for="orderNumber" class="block text-gray-700 mb-2">Ihre Bestellnummer</label>
+                            <input type="text" id="orderNumber" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="z.B. CR12345">
+                        </div>
 
-        <!-- Owner Dashboard -->
-        <section id="ownerSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-amber-900">Owner Dashboard</h2>
-                <div>
-                    <button onclick="logout()" class="text-amber-800 hover:text-amber-600 mr-4">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
-                    </button>
-                    <button onclick="showAddUserModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                        Benutzer hinzufügen <i class="fas fa-plus ml-2"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Bestellstatistiken</h3>
-                    <canvas id="ordersChart" height="200"></canvas>
-                </div>
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Umsatzstatistiken</h3>
-                    <canvas id="revenueChart" height="200"></canvas>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Aktive Bestellungen</h3>
-                    <div id="activeOrders" class="space-y-2 max-h-64 overflow-y-auto">
-                        <!-- Active orders will be added here -->
+                        <button id="checkOrderBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
+                            Bestellung prüfen
+                        </button>
                     </div>
                 </div>
-                
-                <div class="bg-amber-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold text-amber-800 mb-4">Benutzerverwaltung</h3>
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="font-semibold text-amber-700">Kellner</h4>
-                            <button onclick="toggleUserList('waiters')" class="text-amber-800 hover:text-amber-600">
-                                <i class="fas fa-chevron-down"></i>
+
+                <!-- Order Status Display (Hidden by default) -->
+                <div id="orderStatusContainer" class="hidden mt-12">
+                    <div class="luxury-card p-8 max-w-2xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl luxury-font font-semibold text-gray-800">Ihre Bestellung <span id="displayOrderNumber" class="text-green-700"></span></h3>
+                            <span id="orderStatusBadge" class="px-4 py-1 rounded-full text-sm font-semibold"></span>
+                        </div>
+
+                        <div class="mb-8">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Position in der Warteschlange:</span>
+                                <span id="queuePosition" class="font-semibold">-</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Geschätzte Wartezeit:</span>
+                                <span id="waitTime" class="font-semibold">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Bestellzeitpunkt:</span>
+                                <span id="orderTime" class="font-semibold">-</span>
+                            </div>
+                        </div>
+
+                        <div id="orderItemsContainer" class="mb-8">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Ihre Bestellungen:</h4>
+                            <div id="orderItemsList" class="space-y-4">
+                                <!-- Order items will be added here dynamically -->
+                            </div>
+                        </div>
+
+                        <div id="readyNotification" class="hidden p-4 bg-green-100 border-l-4 border-green-500 text-green-700 mb-6">
+                            <div class="flex items-center">
+                                <i class="fas fa-bell mr-2"></i>
+                                <p>Ihre Bestellung ist fertig! Bitte kommen Sie zum Crêpe-Stand.</p>
+                            </div>
+                        </div>
+
+                        <div id="almostReadyNotification" class="hidden p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 mb-6">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock mr-2"></i>
+                                <p>Ihre Bestellung wird in ca. 5 Minuten fertig sein. Bitte machen Sie sich bereit.</p>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button id="newOrderCheckBtn" class="btn-luxury py-2 px-6 rounded-lg font-semibold transition-all">
+                                Neue Bestellung prüfen
                             </button>
                         </div>
-                        <div id="waitersList" class="max-h-0 overflow-hidden transition-all duration-300">
-                            <!-- Waiters will be added here -->
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="font-semibold text-amber-700">Hersteller</h4>
-                            <button onclick="toggleUserList('makers')" class="text-amber-800 hover:text-amber-600">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                        <div id="makersList" class="max-h-0 overflow-hidden transition-all duration-300">
-                            <!-- Makers will be added here -->
-                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Admin Dashboard -->
-        <section id="adminSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-amber-900">Admin Dashboard</h2>
-                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <button onclick="switchToSection('customer')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-user text-3xl mb-2"></i>
-                    <span>Kundenbereich</span>
-                </button>
-                <button onclick="switchToSection('waiter')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-concierge-bell text-3xl mb-2"></i>
-                    <span>Kellner Dashboard</span>
-                </button>
-                <button onclick="switchToSection('maker')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-utensils text-3xl mb-2"></i>
-                    <span>Hersteller Dashboard</span>
-                </button>
-                <button onclick="switchToSection('owner')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-user-tie text-3xl mb-2"></i>
-                    <span>Owner Dashboard</span>
-                </button>
-                <button onclick="showAddUserModal()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-user-plus text-3xl mb-2"></i>
-                    <span>Benutzer hinzufügen</span>
-                </button>
-                <button onclick="showSystemSettings()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
-                    <i class="fas fa-cog text-3xl mb-2"></i>
-                    <span>Systemeinstellungen</span>
-                </button>
-            </div>
-            
-            <div class="bg-amber-50 p-4 rounded-lg">
-                <h3 class="text-lg font-bold text-amber-800 mb-4">Systeminformationen</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h4 class="font-semibold text-amber-700 mb-2">Aktive Benutzer</h4>
-                        <div id="activeUsers" class="space-y-2">
-                            <!-- Active users will be added here -->
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-amber-700 mb-2">Letzte Aktivitäten</h4>
-                        <div id="recentActivities" class="space-y-2">
-                            <!-- Recent activities will be added here -->
-                        </div>
+                <!-- 3D Animation Elements -->
+                <div class="hidden md:block fixed bottom-0 left-0 w-32 h-32 opacity-20">
+                    <div class="crepe-3d floating" style="animation-duration: 8s;">
+                        <i class="fas fa-stroopwafel text-8xl text-green-700"></i>
                     </div>
                 </div>
-            </div>
-        </section>
+                <div class="hidden md:block fixed top-1/4 right-0 w-32 h-32 opacity-20">
+                    <div class="crepe-3d floating" style="animation-duration: 7s; animation-delay: 1s;">
+                        <i class="fas fa-utensils text-8xl text-green-700"></i>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Add User Modal -->
-        <div id="addUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-amber-900">Benutzer hinzufügen</h3>
-                    <button onclick="hideAddUserModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="mb-4">
-                    <label for="newUserName" class="block text-amber-800 mb-2">Name:</label>
-                    <input type="text" id="newUserName" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <div class="mb-4">
-                    <label for="newUserEmail" class="block text-amber-800 mb-2">E-Mail:</label>
-                    <input type="email" id="newUserEmail" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <div class="mb-4">
-                    <label for="newUserPassword" class="block text-amber-800 mb-2">Passwort:</label>
-                    <input type="password" id="newUserPassword" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <div class="mb-6">
-                    <label for="newUserRole" class="block text-amber-800 mb-2">Rolle:</label>
-                    <select id="newUserRole" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
-                        <option value="waiter">Kellner</option>
-                        <option value="maker">Hersteller</option>
-                        <option value="owner">Owner</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <button onclick="addNewUser()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                    Benutzer erstellen
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Global variables
-        let currentUser = null;
-        let currentRole = null;
-        let currentStation = null;
-        let orders = [];
-        let users = [];
-        let orderItems = [];
-        let totalPrice = 0;
-        let ordersChart = null;
-        let revenueChart = null;
-        
-        // Initialize the app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Menu toggle
-            document.getElementById('menuToggle').addEventListener('click', function() {
-                document.getElementById('authMenu').classList.toggle('hidden');
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!document.getElementById('menuToggle').contains(event.target) && 
-                    !document.getElementById('authMenu').contains(event.target)) {
-                    document.getElementById('authMenu').classList.add('hidden');
-                }
-            });
-            
-            // Check if user is already logged in
-            checkAuthState();
-            
-            // Initialize charts (empty for now, will be populated when data is loaded)
-            initializeCharts();
-            
-            // Load initial data
-            loadOrders();
-            loadUsers();
-        });
-        
-        // Check authentication state
-        function checkAuthState() {
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    // Check user role in database
-                    database.ref('users/' + user.uid).once('value').then(snapshot => {
-                        const userData = snapshot.val();
-                        if (userData) {
-                            currentRole = userData.role;
-                            if (currentRole === 'maker') {
-                                currentStation = userData.station || 1;
-                                document.getElementById('currentStation').textContent = currentStation;
-                            }
-                            showDashboard(currentRole);
-                        }
-                    });
-                } else {
-                    // No user is signed in
-                    currentUser = null;
-                    currentRole = null;
-                    showDashboard('customer');
-                }
-            });
-        }
-        
-        // Show login modal for specific role
-        function showLogin(role) {
-            document.getElementById('loginModal').classList.remove('hidden');
-            document.getElementById('loginTitle').textContent = `${role.charAt(0).toUpperCase() + role.slice(1)} Login`;
-            document.getElementById('loginButton').setAttribute('data-role', role);
-            
-            // Show station selection only for makers
-            if (role === 'maker') {
-                document.getElementById('makerStationSelection').classList.remove('hidden');
-            } else {
-                document.getElementById('makerStationSelection').classList.add('hidden');
-            }
-            
-            // Hide auth menu
-            document.getElementById('authMenu').classList.add('hidden');
-        }
-        
-        // Hide login modal
-        function hideLogin() {
-            document.getElementById('loginModal').classList.add('hidden');
-        }
-        
-        // Select maker station
-        function selectMakerStation(station) {
-            currentStation = station;
-            document.getElementById('currentStation').textContent = station;
-        }
-        
-        // Login function
-        function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const role = document.getElementById('loginButton').getAttribute('data-role');
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Check if user has the correct role
-                    return database.ref('users/' + userCredential.user.uid).once('value');
-                })
-                .then(snapshot => {
-                    const userData = snapshot.val();
-                    if (userData && userData.role === role) {
-                        // If maker, update station if selected
-                        if (role === 'maker' && currentStation) {
-                            return database.ref('users/' + currentUser.uid).update({
-                                station: currentStation
-                            });
-                        }
-                    } else {
-                        // Wrong role, sign out
-                        auth.signOut();
-                        alert('Sie haben keine Berechtigung für diese Rolle.');
-                    }
-                })
-                .then(() => {
-                    hideLogin();
-                })
-                .catch(error => {
-                    alert('Login fehlgeschlagen: ' + error.message);
-                });
-        }
-        
-        // Logout function
-        function logout() {
-            auth.signOut().then(() => {
-                currentUser = null;
-                currentRole = null;
-                showDashboard('customer');
-            }).catch(error => {
-                alert('Logout fehlgeschlagen: ' + error.message);
-            });
-        }
-        
-        // Show appropriate dashboard based on role
-        function showDashboard(role) {
-            // Hide all sections first
-            document.getElementById('customerSection').classList.add('hidden');
-            document.getElementById('waiterSection').classList.add('hidden');
-            document.getElementById('makerSection').classList.add('hidden');
-            document.getElementById('ownerSection').classList.add('hidden');
-            document.getElementById('adminSection').classList.add('hidden');
-            
-            // Show the appropriate section
-            if (role === 'customer') {
-                document.getElementById('customerSection').classList.remove('hidden');
-            } else if (role === 'waiter') {
-                document.getElementById('waiterSection').classList.remove('hidden');
-                resetOrder();
-            } else if (role === 'maker') {
-                document.getElementById('makerSection').classList.remove('hidden');
-                updateMakerDashboard();
-            } else if (role === 'owner') {
-                document.getElementById('ownerSection').classList.remove('hidden');
-                updateOwnerDashboard();
-            } else if (role === 'admin') {
-                document.getElementById('adminSection').classList.remove('hidden');
-                updateAdminDashboard();
-            }
-        }
-        
-        // Switch to specific section (for admin)
-        function switchToSection(section) {
-            showDashboard(section);
-        }
-        
-        // Check order status for customer
-        function checkOrderStatus() {
-            const orderNumber = document.getElementById('orderNumber').value;
-            if (!orderNumber) {
-                alert('Bitte geben Sie eine Bestellnummer ein.');
-                return;
-            }
-            
-            // In a real app, this would query the database
-            // For demo purposes, we'll simulate a response
-            const orderStatus = document.getElementById('orderStatus');
-            orderStatus.classList.remove('hidden');
-            
-            document.getElementById('statusOrderNumber').textContent = '#' + orderNumber;
-            
-            // Simulate random order details
-            const items = ['Nutella Crêpe', 'Erdbeer Crêpe', 'Zimt-Zucker', 'Banane-Nutella'];
-            const randomItem = items[Math.floor(Math.random() * items.length)];
-            document.getElementById('statusOrderItems').textContent = randomItem;
-            
-            const queuePosition = Math.floor(Math.random() * 5) + 1;
-            document.getElementById('statusQueuePosition').textContent = queuePosition;
-            
-            const waitTime = queuePosition * 5;
-            document.getElementById('statusWaitTime').textContent = waitTime + ' Minuten';
-            
-            // Show alerts based on wait time
-            document.getElementById('readyAlert').classList.add('hidden');
-            document.getElementById('almostReadyAlert').classList.add('hidden');
-            
-            if (waitTime <= 5) {
-                if (waitTime <= 0) {
-                    document.getElementById('readyAlert').classList.remove('hidden');
-                } else {
-                    document.getElementById('almostReadyAlert').classList.remove('hidden');
-                }
-            }
-            
-            // Add animation
-            orderStatus.classList.add('slide-in');
-        }
-        
-        // Waiter functions
-        function addToOrder(item, price) {
-            orderItems.push({ item, price });
-            updateOrderDisplay();
-        }
-        
-        function addCustomCrepe() {
-            const base = document.getElementById('baseSelect').value;
-            const topping = document.getElementById('toppingSelect').value;
-            const extra = document.getElementById('extraSelect').value;
-            
-            // Calculate price based on selections
-            let price = 0;
-            if (base.includes('Weizen')) price += 2.00;
-            else if (base.includes('Dinkel')) price += 2.50;
-            else if (base.includes('Buchweizen')) price += 3.00;
-            
-            if (topping.includes('Nutella')) price += 1.50;
-            else if (topping.includes('Erdbeeren')) price += 2.00;
-            else if (topping.includes('Bananen')) price += 1.50;
-            else if (topping.includes('Zimt-Zucker')) price += 0.50;
-            
-            if (extra.includes('Schlagsahne')) price += 0.80;
-            else if (extra.includes('Eis')) price += 1.50;
-            else if (extra.includes('Nüsse')) price += 1.00;
-            
-            const itemName = `${base.split(' ')[0]} Crêpe mit ${topping}` + (extra !== 'Keine' ? ` und ${extra}` : '');
-            addToOrder(itemName, price);
-        }
-        
-        function updateOrderDisplay() {
-            const orderItemsContainer = document.getElementById('currentOrderItems');
-            orderItemsContainer.innerHTML = '';
-            
-            totalPrice = 0;
-            
-            orderItems.forEach((item, index) => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'flex justify-between items-center mb-2';
-                itemElement.innerHTML = `
-                    <span class="text-amber-800">${item.item}</span>
-                    <div class="flex items-center">
-                        <span class="font-bold mr-4">€${item.price.toFixed(2)}</span>
-                        <button onclick="removeOrderItem(${index})" class="text-red-500 hover:text-red-700">
+            <!-- Login Modal -->
+            <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="luxury-card p-8 w-full max-w-md">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl luxury-font font-semibold text-gray-800">Anmelden</h3>
+                        <button id="closeLoginModalBtn" class="text-gray-500 hover:text-gray-700">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                `;
-                orderItemsContainer.appendChild(itemElement);
-                totalPrice += item.price;
-            });
-            
-            document.getElementById('orderTotal').textContent = `€${totalPrice.toFixed(2)}`;
-        }
-        
-        function removeOrderItem(index) {
-            orderItems.splice(index, 1);
-            updateOrderDisplay();
-        }
-        
-        function resetOrder() {
-            orderItems = [];
-            totalPrice = 0;
-            updateOrderDisplay();
-        }
-        
-        function placeOrder() {
-            if (orderItems.length === 0) {
-                alert('Bitte fügen Sie Artikel zur Bestellung hinzu.');
-                return;
-            }
-            
-            // Generate random order number
-            const orderNumber = Math.floor(10000 + Math.random() * 90000);
-            
-            // Create order object
-            const order = {
-                id: orderNumber.toString(),
-                items: orderItems,
-                total: totalPrice,
-                status: 'pending',
-                timestamp: new Date().getTime(),
-                waiterId: currentUser.uid
-            };
-            
-            // Save to database
-            database.ref('orders/' + orderNumber).set(order)
-                .then(() => {
-                    alert(`Bestellung #${orderNumber} erfolgreich aufgegeben!`);
-                    resetOrder();
-                    loadOrders(); // Refresh orders list
-                })
-                .catch(error => {
-                    alert('Fehler beim Aufgeben der Bestellung: ' + error.message);
-                });
-        }
-        
-        // Maker functions
-        function updateMakerDashboard() {
-            if (currentRole !== 'maker') return;
-            
-            // Get orders for this station
-            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
-                .then(snapshot => {
-                    const orders = [];
-                    snapshot.forEach(childSnapshot => {
-                        orders.push(childSnapshot.val());
-                    });
-                    
-                    // Sort by timestamp (oldest first)
-                    orders.sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    // Display current order (first in queue)
-                    const currentOrderContainer = document.getElementById('currentOrderDetails');
-                    const orderQueueContainer = document.getElementById('orderQueue');
-                    
-                    currentOrderContainer.innerHTML = '';
-                    orderQueueContainer.innerHTML = '';
-                    
-                    if (orders.length > 0) {
-                        const currentOrder = orders[0];
-                        displayOrderDetails(currentOrderContainer, currentOrder, true);
-                        
-                        // Display queue (remaining orders)
-                        for (let i = 1; i < orders.length; i++) {
-                            const orderElement = document.createElement('div');
-                            orderElement.className = 'bg-white p-3 rounded-lg border border-amber-200';
-                            displayOrderDetails(orderElement, orders[i], false);
-                            orderQueueContainer.appendChild(orderElement);
-                        }
-                    } else {
-                        currentOrderContainer.innerHTML = '<p class="text-center text-amber-700 py-8">Keine aktive Bestellung</p>';
-                    }
-                });
-        }
-        
-        function displayOrderDetails(container, order, isCurrent) {
-            container.innerHTML = `
-                <div class="mb-2">
-                    <span class="text-amber-700">Bestellnummer:</span>
-                    <span class="font-bold">#${order.id}</span>
-                </div>
-                <div class="mb-2">
-                    <span class="text-amber-700">Bestellung:</span>
-                    <ul class="list-disc list-inside ml-2">
-                        ${order.items.map(item => `<li>${item.item} (€${item.price.toFixed(2)})</li>`).join('')}
-                    </ul>
-                </div>
-                <div class="mb-2">
-                    <span class="text-amber-700">Gesamtpreis:</span>
-                    <span class="font-bold">€${order.total.toFixed(2)}</span>
-                </div>
-                ${isCurrent ? `
-                <div class="mt-4 text-sm text-amber-700">
-                    <i class="fas fa-clock mr-1"></i> ${new Date(order.timestamp).toLocaleTimeString()}
-                </div>
-                ` : ''}
-            `;
-        }
-        
-        function markOrderAsDone() {
-            // Get the current order (first in queue)
-            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
-                .then(snapshot => {
-                    const orders = [];
-                    snapshot.forEach(childSnapshot => {
-                        orders.push({ id: childSnapshot.key, ...childSnapshot.val() });
-                    });
-                    
-                    if (orders.length > 0) {
-                        const currentOrder = orders[0];
-                        
-                        // Update order status to 'done'
-                        return database.ref('orders/' + currentOrder.id).update({
-                            status: 'done',
-                            makerId: currentUser.uid,
-                            completedAt: new Date().getTime()
-                        });
-                    }
-                })
-                .then(() => {
-                    updateMakerDashboard();
-                    loadOrders(); // Refresh orders list for owner
-                })
-                .catch(error => {
-                    alert('Fehler beim Markieren der Bestellung: ' + error.message);
-                });
-        }
-        
-        function skipOrder() {
-            // Get the current order (first in queue)
-            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
-                .then(snapshot => {
-                    const orders = [];
-                    snapshot.forEach(childSnapshot => {
-                        orders.push({ id: childSnapshot.key, ...childSnapshot.val() });
-                    });
-                    
-                    if (orders.length > 0) {
-                        const currentOrder = orders[0];
-                        
-                        // Move to end of queue by updating timestamp
-                        return database.ref('orders/' + currentOrder.id).update({
-                            timestamp: new Date().getTime()
-                        });
-                    }
-                })
-                .then(() => {
-                    updateMakerDashboard();
-                })
-                .catch(error => {
-                    alert('Fehler beim Überspringen der Bestellung: ' + error.message);
-                });
-        }
-        
-        // Owner functions
-        function updateOwnerDashboard() {
-            if (currentRole !== 'owner' && currentRole !== 'admin') return;
-            
-            // Update active orders
-            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
-                .then(snapshot => {
-                    const activeOrdersContainer = document.getElementById('activeOrders');
-                    activeOrdersContainer.innerHTML = '';
-                    
-                    const orders = [];
-                    snapshot.forEach(childSnapshot => {
-                        orders.push(childSnapshot.val());
-                    });
-                    
-                    // Sort by timestamp (oldest first)
-                    orders.sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    if (orders.length > 0) {
-                        orders.forEach(order => {
-                            const orderElement = document.createElement('div');
-                            orderElement.className = 'bg-white p-3 rounded-lg border border-amber-200';
-                            orderElement.innerHTML = `
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="font-bold">#${order.id}</span>
-                                    <span class="text-sm text-amber-700">${new Date(order.timestamp).toLocaleTimeString()}</span>
-                                </div>
-                                <div class="text-sm text-amber-800">
-                                    ${order.items.length} Artikel - €${order.total.toFixed(2)}
-                                </div>
-                            `;
-                            activeOrdersContainer.appendChild(orderElement);
-                        });
-                    } else {
-                        activeOrdersContainer.innerHTML = '<p class="text-center text-amber-700 py-4">Keine aktive Bestellungen</p>';
-                    }
-                });
-            
-            // Update charts
-            updateCharts();
-        }
-        
-        function initializeCharts() {
-            const ordersCtx = document.getElementById('ordersChart').getContext('2d');
-            ordersChart = new Chart(ordersCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Heute', 'Gestern', 'Vorgestern'],
-                    datasets: [{
-                        label: 'Bestellungen',
-                        data: [0, 0, 0],
-                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
-                        borderColor: 'rgba(245, 158, 11, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-            
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-            revenueChart = new Chart(revenueCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun'],
-                    datasets: [{
-                        label: 'Umsatz (€)',
-                        data: [0, 0, 0, 0, 0, 0],
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        borderColor: 'rgba(245, 158, 11, 1)',
-                        borderWidth: 2,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateCharts() {
-            // In a real app, this would fetch actual data from the database
-            // For demo purposes, we'll use random data
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const dayBefore = new Date(today);
-            dayBefore.setDate(dayBefore.getDate() - 2);
-            
-            ordersChart.data.labels = [
-                today.toLocaleDateString(),
-                yesterday.toLocaleDateString(),
-                dayBefore.toLocaleDateString()
-            ];
-            
-            ordersChart.data.datasets[0].data = [
-                Math.floor(Math.random() * 20) + 10,
-                Math.floor(Math.random() * 20) + 10,
-                Math.floor(Math.random() * 20) + 10
-            ];
-            
-            revenueChart.data.datasets[0].data = [
-                Math.floor(Math.random() * 500) + 200,
-                Math.floor(Math.random() * 500) + 200,
-                Math.floor(Math.random() * 500) + 200,
-                Math.floor(Math.random() * 500) + 200,
-                Math.floor(Math.random() * 500) + 200,
-                Math.floor(Math.random() * 500) + 200
-            ];
-            
-            ordersChart.update();
-            revenueChart.update();
-        }
-        
-        function toggleUserList(type) {
-            const listElement = document.getElementById(`${type}List`);
-            listElement.classList.toggle('max-h-0');
-            listElement.classList.toggle('max-h-screen');
-        }
-        
-        function showAddUserModal() {
-            document.getElementById('addUserModal').classList.remove('hidden');
-        }
-        
-        function hideAddUserModal() {
-            document.getElementById('addUserModal').classList.add('hidden');
-        }
-        
-        function addNewUser() {
-            const name = document.getElementById('newUserName').value;
-            const email = document.getElementById('newUserEmail').value;
-            const password = document.getElementById('newUserPassword').value;
-            const role = document.getElementById('newUserRole').value;
-            
-            if (!name || !email || !password) {
-                alert('Bitte füllen Sie alle Felder aus.');
-                return;
-            }
-            
-            // Create user in Firebase Auth
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Save additional user data to database
-                    return database.ref('users/' + userCredential.user.uid).set({
-                        name: name,
-                        email: email,
-                        role: role,
-                        createdAt: new Date().getTime()
-                    });
-                })
-                .then(() => {
-                    alert('Benutzer erfolgreich erstellt!');
-                    hideAddUserModal();
-                    loadUsers(); // Refresh users list
-                })
-                .catch(error => {
-                    alert('Fehler beim Erstellen des Benutzers: ' + error.message);
-                });
-        }
-        
-        // Admin functions
-        function updateAdminDashboard() {
-            if (currentRole !== 'admin') return;
-            
-            // Load active users
-            database.ref('users').once('value')
-                .then(snapshot => {
-                    const activeUsersContainer = document.getElementById('activeUsers');
-                    activeUsersContainer.innerHTML = '';
-                    
-                    snapshot.forEach(childSnapshot => {
-                        const user = childSnapshot.val();
-                        const userElement = document.createElement('div');
-                        userElement.className = 'bg-white p-2 rounded-lg border border-amber-200';
-                        userElement.innerHTML = `
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold">${user.name}</span>
-                                <span class="text-xs px-2 py-1 rounded ${getRoleColor(user.role)}">${user.role}</span>
-                            </div>
-                            <div class="text-xs text-amber-700">${user.email}</div>
-                        `;
-                        activeUsersContainer.appendChild(userElement);
-                    });
-                });
-            
-            // Load recent activities (simulated)
-            const activitiesContainer = document.getElementById('recentActivities');
-            activitiesContainer.innerHTML = '';
-            
-            const activities = [
-                { action: 'Bestellung aufgegeben', user: 'Max Mustermann', time: 'vor 2 Minuten' },
-                { action: 'Bestellung fertiggestellt', user: 'Erika Musterfrau', time: 'vor 5 Minuten' },
-                { action: 'Neuer Benutzer erstellt', user: 'Admin', time: 'vor 15 Minuten' },
-                { action: 'Systemaktualisierung', user: 'System', time: 'vor 1 Stunde' }
-            ];
-            
-            activities.forEach(activity => {
-                const activityElement = document.createElement('div');
-                activityElement.className = 'bg-white p-2 rounded-lg border border-amber-200';
-                activityElement.innerHTML = `
-                    <div class="text-sm font-semibold">${activity.action}</div>
-                    <div class="flex justify-between text-xs text-amber-700">
-                        <span>${activity.user}</span>
-                        <span>${activity.time}</span>
+
+                    <div class="mb-6">
+                        <label for="loginRole" class="block text-gray-700 mb-2">Rolle</label>
+                        <select id="loginRole" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent">
+                            <option value="owner">Besitzer</option>
+                            <option value="maker">Hersteller</option>
+                            <option value="waiter">Kellner</option>
+                            <option value="admin">Admin</option>
+                        </select>
                     </div>
-                `;
-                activitiesContainer.appendChild(activityElement);
-            });
+
+                    <div class="mb-6">
+                        <label for="loginUsername" class="block text-gray-700 mb-2">Benutzername</label>
+                        <input type="text" id="loginUsername" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="Ihr Benutzername">
+                    </div>
+
+                    <div class="mb-8">
+                        <label for="loginPassword" class="block text-gray-700 mb-2">Passwort</label>
+                        <input type="password" id="loginPassword" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="Ihr Passwort">
+                    </div>
+
+                    <button id="submitLoginBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all mb-4">
+                        Anmelden
+                    </button>
+
+                    <div id="loginError" class="hidden p-3 bg-red-100 border-l-4 border-red-500 text-red-700 mt-4">
+                        <p id="loginErrorMessage"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maker Section -->
+            <section id="makerSection" class="hidden mb-16">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl luxury-font font-bold text-gray-800">Hersteller Bereich</h2>
+                    <div id="makerStationInfo" class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold">
+                        Station: <span id="currentStation">-</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <button data-station="1" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-1"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 1</h3>
+                        <p class="text-gray-600">Wählen Sie diese Station</p>
+                    </button>
+                    <button data-station="2" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-2"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 2</h3>
+                        <p class="text-gray-600">Wählen Sie diese Station</p>
+                    </button>
+                    <button data-station="3" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-3"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 3</h3>
+                        <p class="text-gray-600">Wählen Sie diese Station</p>
+                    </button>
+                </div>
+
+                <div id="currentOrderContainer" class="hidden luxury-card p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl luxury-font font-semibold">Aktuelle Bestellung</h3>
+                        <div class="flex space-x-2">
+                            <button id="completeOrderBtn" class="btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
+                                Fertigstellen
+                            </button>
+                            <button id="skipOrderBtn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg text-sm font-semibold hover:bg-gray-300">
+                                Überspringen
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Bestellnummer:</span>
+                            <span id="makerOrderNumber" class="font-semibold">-</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Zeitpunkt:</span>
+                            <span id="makerOrderTime" class="font-semibold">-</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Bestellte Crêpes:</h4>
+                        <div id="makerOrderItems" class="space-y-4">
+                            <!-- Order items will be added here dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="noOrderContainer" class="luxury-card p-8 text-center">
+                    <div class="w-24 h-24 mx-auto mb-6 luxury-bg rounded-full flex items-center justify-center text-white text-4xl">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h3 class="text-xl luxury-font font-semibold mb-2">Keine aktuellen Bestellungen</h3>
+                    <p class="text-gray-600">Es gibt momentan keine Bestellungen in Ihrer Warteschlange.</p>
+                </div>
+            </section>
+
+            <!-- Waiter Section -->
+            <section id="waiterSection" class="hidden mb-16">
+                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Kellner Bereich</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="luxury-card p-6">
+                        <h3 class="text-xl luxury-font font-semibold mb-4">Neue Bestellung</h3>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Menüauswahl</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button data-item="1" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-pancakes"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Classic Crêpe</h4>
+                                    <p class="text-sm text-gray-600">€5.50</p>
+                                </button>
+                                <button data-item="2" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-candy"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Chocolate Dream</h4>
+                                    <p class="text-sm text-gray-600">€7.00</p>
+                                </button>
+                                <button data-item="3" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-berry"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Berry Bliss</h4>
+                                    <p class="text-sm text-gray-600">€8.50</p>
+                                </button>
+                                <button data-item="4" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-cheese"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Savory Delight</h4>
+                                    <p class="text-sm text-gray-600">€9.00</p>
+                                </button>
+                                <button data-item="5" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-jar"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Nutella Supreme</h4>
+                                    <p class="text-sm text-gray-600">€8.00</p>
+                                </button>
+                                <button id="customCrepeBtn" class="luxury-card p-4 text-center hover:shadow-md transition-all bg-yellow-50 border border-yellow-200">
+                                    <div class="text-green-700 text-2xl mb-2">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    <h4 class="font-semibold">Custom Crêpe</h4>
+                                    <p class="text-sm text-gray-600">Eigene Kreation</p>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Crepe Form (Hidden by default) -->
+                        <div id="customCrepeForm" class="hidden mb-6 luxury-card p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-semibold">Eigene Crêpe-Kreation</h4>
+                                <button id="closeCustomCrepeBtn" class="text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Zutaten auswählen</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <!-- Ingredients will be added dynamically -->
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Spezielle Anweisungen</label>
+                                <textarea id="customCrepeNotes" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" rows="2" placeholder="Besondere Wünsche..."></textarea>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm text-gray-600">Gesamtpreis:</p>
+                                    <p class="text-lg font-semibold">€<span id="customCrepePrice">0.00</span></p>
+                                </div>
+                                <button id="addCustomCrepeBtn" class="btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
+                                    Hinzufügen
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Aktuelle Bestellung</label>
+                            <div id="currentOrderItems" class="space-y-3 mb-4 max-h-48 overflow-y-auto p-2">
+                                <!-- Selected items will be added here -->
+                                <p class="text-gray-500 text-center py-4">Noch keine Artikel ausgewählt</p>
+                            </div>
+
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-700">Gesamtbetrag:</span>
+                                <span id="orderTotal" class="text-xl font-bold">€0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="customerNotes" class="block text-gray-700 mb-2">Kundennotizen</label>
+                            <textarea id="customerNotes" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" rows="2" placeholder="Besondere Wünsche des Kunden..."></textarea>
+                        </div>
+
+                        <button id="submitOrderBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
+                            Bestellung aufgeben
+                        </button>
+                    </div>
+
+                    <div class="luxury-card p-6">
+                        <h3 class="text-xl luxury-font font-semibold mb-4">Bestellstatus</h3>
+
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-semibold">Aktive Bestellungen</h4>
+                                <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <span id="activeOrdersCount">0</span> aktiv
+                                </div>
+                            </div>
+
+                            <div id="activeOrdersList" class="space-y-3 max-h-96 overflow-y-auto">
+                                <!-- Active orders will be added here -->
+                                <p class="text-gray-500 text-center py-8">Keine aktiven Bestellungen</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Owner Section -->
+            <section id="ownerSection" class="hidden mb-16">
+                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Besitzer Bereich</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="luxury-card p-6">
+                        <h3 class="text-xl luxury-font font-semibold mb-4">Benutzerverwaltung</h3>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Neuen Benutzer hinzufügen</label>
+
+                            <div class="mb-4">
+                                <label for="newUserRole" class="block text-gray-700 mb-1 text-sm">Rolle</label>
+                                <select id="newUserRole" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm">
+                                    <option value="waiter">Kellner</option>
+                                    <option value="maker">Hersteller</option>
+                                    <option value="owner">Besitzer</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="newUsername" class="block text-gray-700 mb-1 text-sm">Benutzername</label>
+                                <input type="text" id="newUsername" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm" placeholder="Benutzername">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="newUserPassword" class="block text-gray-700 mb-1 text-sm">Passwort</label>
+                                <input type="password" id="newUserPassword" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm" placeholder="Passwort">
+                            </div>
+
+                            <button id="addUserBtn" class="w-full btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
+                                Benutzer hinzufügen
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2">Benutzerliste</label>
+                            <div id="usersList" class="space-y-2 max-h-64 overflow-y-auto">
+                                <!-- Users will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="luxury-card p-6">
+                        <h3 class="text-xl luxury-font font-semibold mb-4">Bestellstatistiken</h3>
+
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-semibold">Heutige Verkäufe</h4>
+                                <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <span id="todayOrdersCount">0</span> Bestellungen
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="todaySalesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-600">Gesamtumsatz heute:</p>
+                                <p class="text-xl font-bold">€<span id="todayRevenue">0.00</span></p>
+                            </div>
+                            <button id="refreshStatsBtn" class="bg-gray-200 text-gray-800 py-1 px-3 rounded-lg text-sm font-semibold hover:bg-gray-300 flex items-center">
+                                <i class="fas fa-sync-alt mr-1"></i> Aktualisieren
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="luxury-card p-6">
+                        <h3 class="text-xl luxury-font font-semibold mb-4">Menüverwaltung</h3>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">Menüartikel</label>
+                            <div id="menuItemsList" class="space-y-3 max-h-64 overflow-y-auto">
+                                <!-- Menu items will be added here dynamically -->
+                            </div>
+                        </div>
+
+                        <button id="addMenuItemBtn" class="w-full btn-accent py-2 px-4 rounded-lg text-sm font-semibold">
+                            Artikel hinzufügen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="luxury-card p-6">
+                    <h3 class="text-xl luxury-font font-semibold mb-4">Aktuelle Bestellungen</h3>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left border-b border-gray-200">
+                                    <th class="pb-2">Bestellnummer</th>
+                                    <th class="pb-2">Zeitpunkt</th>
+                                    <th class="pb-2">Status</th>
+                                    <th class="pb-2">Artikel</th>
+                                    <th class="pb-2">Gesamt</th>
+                                    <th class="pb-2">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ownerOrdersList">
+                                <!-- Orders will be added here dynamically -->
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-gray-500">Keine aktuellen Bestellungen</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Section -->
+            <section id="adminSection" class="hidden mb-16">
+                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Admin Bereich</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <a href="#" id="adminCustomerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Kundenbereich</h3>
+                        <p class="text-sm text-gray-600">Bestellstatus prüfen</p>
+                    </a>
+                    <a href="#" id="adminMakerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Hersteller</h3>
+                        <p class="text-sm text-gray-600">Bestellungen zubereiten</p>
+                    </a>
+                    <a href="#" id="adminWaiterBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-concierge-bell"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Kellner</h3>
+                        <p class="text-sm text-gray-600">Bestellungen aufnehmen</p>
+                    </a>
+                    <a href="#" id="adminOwnerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
+                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="text-xl luxury-font font-semibold mb-2">Besitzer</h3>
+                        <p class="text-sm text-gray-600">Statistiken & Verwaltung</p>
+                    </a>
+                </div>
+
+                <div class="luxury-card p-6">
+                    <h3 class="text-xl luxury-font font-semibold mb-4">Systeminformationen</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Benutzerstatistiken</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Aktive Benutzer:</span>
+                                    <span id="activeUsersCount" class="font-semibold">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Kellner:</span>
+                                    <span id="waitersCount" class="font-semibold">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Hersteller:</span>
+                                    <span id="makersCount" class="font-semibold">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Bestellstatistiken</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Heutige Bestellungen:</span>
+                                    <span id="todayOrdersAdminCount" class="font-semibold">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Wartende Bestellungen:</span>
+                                    <span id="pendingOrdersCount" class="font-semibold">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Fertige Bestellungen:</span>
+                                    <span id="completedOrdersCount" class="font-semibold">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold mb-2">Systemstatus</h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Datenbank:</span>
+                                    <span class="text-green-600 font-semibold">Verbunden</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Letzte Aktualisierung:</span>
+                                    <span id="lastUpdateTime" class="font-semibold">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Version:</span>
+                                    <span class="font-semibold">1.0.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order Confirmation Modal -->
+            <div id="orderConfirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="luxury-card p-8 w-full max-w-md text-center">
+                    <div class="w-24 h-24 mx-auto mb-6 luxury-bg rounded-full flex items-center justify-center text-white text-4xl pulse">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h3 class="text-2xl luxury-font font-semibold mb-4">Bestellung erfolgreich!</h3>
+                    <p class="text-gray-600 mb-6">Die Bestellung wurde erfolgreich aufgegeben.</p>
+                    <div class="bg-gray-100 p-4 rounded-lg mb-6">
+                        <p class="text-sm text-gray-600 mb-1">Bitte notieren Sie die Bestellnummer:</p>
+                        <p id="confirmationOrderNumber" class="text-3xl font-bold text-green-700">CR12345</p>
+                    </div>
+                    <button id="closeConfirmationModalBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
+                        Fertig
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="luxury-card p-8 flex flex-col items-center">
+                    <div class="spinner mb-4"></div>
+                    <p class="text-gray-700">Laden...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="luxury-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h2 class="text-2xl luxury-font font-bold">Luxury Crêpe</h2>
+                    <p class="text-sm opacity-80">Premium Crêpes mit Liebe zubereitet</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-white border-opacity-20 mt-6 pt-6 text-sm text-center md:text-left opacity-80">
+                <p>&copy; 2023 Luxury Crêpe. Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Main JavaScript -->
+    <script>
+        // DOM Elements
+        const menuBtn = document.getElementById('menuBtn');
+        const menuDropdown = document.getElementById('menuDropdown');
+        const customerBtn = document.getElementById('customerBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutBtnContainer = document.getElementById('logoutBtnContainer');
+        const loginModal = document.getElementById('loginModal');
+        const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
+        const submitLoginBtn = document.getElementById('submitLoginBtn');
+        const loginError = document.getElementById('loginError');
+        const loginErrorMessage = document.getElementById('loginErrorMessage');
+        const loginRole = document.getElementById('loginRole');
+        const loginUsername = document.getElementById('loginUsername');
+        const loginPassword = document.getElementById('loginPassword');
+
+        const customerSection = document.getElementById('customerSection');
+        const makerSection = document.getElementById('makerSection');
+        const waiterSection = document.getElementById('waiterSection');
+        const ownerSection = document.getElementById('ownerSection');
+        const adminSection = document.getElementById('adminSection');
+
+        const orderNumber = document.getElementById('orderNumber');
+        const checkOrderBtn = document.getElementById('checkOrderBtn');
+        const orderStatusContainer = document.getElementById('orderStatusContainer');
+        const displayOrderNumber = document.getElementById('displayOrderNumber');
+        const orderStatusBadge = document.getElementById('orderStatusBadge');
+        const queuePosition = document.getElementById('queuePosition');
+        const waitTime = document.getElementById('waitTime');
+        const orderTime = document.getElementById('orderTime');
+        const orderItemsList = document.getElementById('orderItemsList');
+        const readyNotification = document.getElementById('readyNotification');
+        const almostReadyNotification = document.getElementById('almostReadyNotification');
+        const newOrderCheckBtn = document.getElementById('newOrderCheckBtn');
+
+        const stationBtns = document.querySelectorAll('.station-btn');
+        const currentStation = document.getElementById('currentStation');
+        const currentOrderContainer = document.getElementById('currentOrderContainer');
+        const noOrderContainer = document.getElementById('noOrderContainer');
+        const makerOrderNumber = document.getElementById('makerOrderNumber');
+        const makerOrderTime = document.getElementById('makerOrderTime');
+        const makerOrderItems = document.getElementById('makerOrderItems');
+        const completeOrderBtn = document.getElementById('completeOrderBtn');
+        const skipOrderBtn = document.getElementById('skipOrderBtn');
+
+        const menuItemBtns = document.querySelectorAll('.menu-item-btn');
+        const customCrepeBtn = document.getElementById('customCrepeBtn');
+        const customCrepeForm = document.getElementById('customCrepeForm');
+        const closeCustomCrepeBtn = document.getElementById('closeCustomCrepeBtn');
+        const customCrepePrice = document.getElementById('customCrepePrice');
+        const addCustomCrepeBtn = document.getElementById('addCustomCrepeBtn');
+        const customCrepeNotes = document.getElementById('customCrepeNotes');
+        const currentOrderItems = document.getElementById('currentOrderItems');
+        const orderTotal = document.getElementById('orderTotal');
+        const customerNotes = document.getElementById('customerNotes');
+        const submitOrderBtn = document.getElementById('submitOrderBtn');
+        const activeOrdersCount = document.getElementById('activeOrdersCount');
+        const activeOrdersList = document.getElementById('activeOrdersList');
+
+        const newUserRole = document.getElementById('newUserRole');
+        const newUsername = document.getElementById('newUsername');
+        const newUserPassword = document.getElementById('newUserPassword');
+        const addUserBtn = document.getElementById('addUserBtn');
+        const usersList = document.getElementById('usersList');
+        const todayOrdersCount = document.getElementById('todayOrdersCount');
+        const todayRevenue = document.getElementById('todayRevenue');
+        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
+        const menuItemsList = document.getElementById('menuItemsList');
+        const ownerOrdersList = document.getElementById('ownerOrdersList');
+        const todaySalesChart = document.getElementById('todaySalesChart');
+
+        const adminCustomerBtn = document.getElementById('adminCustomerBtn');
+        const adminMakerBtn = document.getElementById('adminMakerBtn');
+        const adminWaiterBtn = document.getElementById('adminWaiterBtn');
+        const adminOwnerBtn = document.getElementById('adminOwnerBtn');
+        const activeUsersCount = document.getElementById('activeUsersCount');
+        const waitersCount = document.getElementById('waitersCount');
+        const makersCount = document.getElementById('makersCount');
+        const todayOrdersAdminCount = document.getElementById('todayOrdersAdminCount');
+        const pendingOrdersCount = document.getElementById('pendingOrdersCount');
+        const completedOrdersCount = document.getElementById('completedOrdersCount');
+        const lastUpdateTime = document.getElementById('lastUpdateTime');
+
+        const orderConfirmationModal = document.getElementById('orderConfirmationModal');
+        const confirmationOrderNumber = document.getElementById('confirmationOrderNumber');
+        const closeConfirmationModalBtn = document.getElementById('closeConfirmationModalBtn');
+
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Global variables
+        let selectedStation = null;
+        let currentOrder = [];
+        let customCrepeIngredients = [];
+        let chartInstance = null;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase (mock functions for this example)
+            initializeFirebase();
+
+            // Set up event listeners
+            setupEventListeners();
+
+            // Show customer section by default
+            showSection('customer');
+
+            // Initialize custom crepe ingredients
+            initializeCustomCrepeIngredients();
+
+            // Check if user is already logged in (for demo purposes)
+            checkAuthState();
+        });
+
+        // Firebase initialization (mock)
+        function initializeFirebase() {
+            console.log("Firebase initialized");
+            // In a real app, this would connect to your Firebase project
         }
-        
-        function getRoleColor(role) {
-            switch(role) {
-                case 'admin': return 'bg-purple-100 text-purple-800';
-                case 'owner': return 'bg-blue-100 text-blue-800';
-                case 'waiter': return 'bg-green-100 text-green-800';
-                case 'maker': return 'bg-yellow-100 text-yellow-800';
-                default: return 'bg-gray-100 text-gray-800';
+
+        // Check authentication state (mock)
+        function checkAuthState() {
+            // In a real app, this would check Firebase auth state
+            console.log("Checking auth state");
+        }
+
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Menu dropdown
+            menuBtn.addEventListener('click', toggleMenuDropdown);
+            document.addEventListener('click', closeMenuDropdownOutside);
+
+            // Navigation
+            customerBtn.addEventListener('click', () => showSection('customer'));
+            loginBtn.addEventListener('click', showLoginModal);
+            logoutBtn.addEventListener('click', logoutUser);
+
+            // Customer section
+            checkOrderBtn.addEventListener('click', checkOrderStatus);
+            newOrderCheckBtn.addEventListener('click', resetOrderCheck);
+
+            // Login modal
+            closeLoginModalBtn.addEventListener('click', hideLoginModal);
+            submitLoginBtn.addEventListener('click', loginUser);
+
+            // Maker section
+            stationBtns.forEach(btn => {
+                btn.addEventListener('click', selectStation);
+            });
+            completeOrderBtn.addEventListener('click', completeOrder);
+            skipOrderBtn.addEventListener('click', skipOrder);
+
+            // Waiter section
+            menuItemBtns.forEach(btn => {
+                btn.addEventListener('click', addMenuItemToOrder);
+            });
+            customCrepeBtn.addEventListener('click', showCustomCrepeForm);
+            closeCustomCrepeBtn.addEventListener('click', hideCustomCrepeForm);
+            addCustomCrepeBtn.addEventListener('click', addCustomCrepeToOrder);
+            submitOrderBtn.addEventListener('click', submitOrder);
+
+            // Owner section
+            addUserBtn.addEventListener('click', addNewUser);
+            refreshStatsBtn.addEventListener('click', refreshStatistics);
+
+            // Admin section
+            adminCustomerBtn.addEventListener('click', () => showSection('customer'));
+            adminMakerBtn.addEventListener('click', () => showSection('maker'));
+            adminWaiterBtn.addEventListener('click', () => showSection('waiter'));
+            adminOwnerBtn.addEventListener('click', () => showSection('owner'));
+
+            // Order confirmation modal
+            closeConfirmationModalBtn.addEventListener('click', hideOrderConfirmationModal);
+        }
+
+        // Toggle menu dropdown
+        function toggleMenuDropdown(e) {
+            e.stopPropagation();
+            menuDropdown.classList.toggle('hidden');
+        }
+
+        // Close menu dropdown when clicking outside
+        function closeMenuDropdownOutside(e) {
+            if (!menuDropdown.contains(e.target) && e.target !== menuBtn) {
+                menuDropdown.classList.add('hidden');
             }
         }
-        
-        function showSystemSettings() {
-            alert('Systemeinstellungen werden hier angezeigt. (Demo)');
+
+        // Show login modal
+        function showLoginModal() {
+            loginModal.classList.remove('hidden');
+            menuDropdown.classList.add('hidden');
         }
-        
-        // Load orders from database
-        function loadOrders() {
-            database.ref('orders').on('value', snapshot => {
-                orders = [];
-                snapshot.forEach(childSnapshot => {
-                    orders.push(childSnapshot.val());
-                });
-                
-                // Update relevant dashboards
-                if (currentRole === 'maker') updateMakerDashboard();
-                if (currentRole === 'owner' || currentRole === 'admin') updateOwnerDashboard();
-            });
+
+        // Hide login modal
+        function hideLoginModal() {
+            loginModal.classList.add('hidden');
+            loginError.classList.add('hidden');
+            loginUsername.value = '';
+            loginPassword.value = '';
         }
-        
-        // Load users from database
-        function loadUsers() {
-            database.ref('users').once('value')
-                .then(snapshot => {
-                    users = [];
-                    snapshot.forEach(childSnapshot => {
-                        users.push({ id: childSnapshot.key, ...childSnapshot.val() });
-                    });
-                    
-                    // Update waiters and makers lists
-                    updateUserLists();
-                });
+
+        // Login user (mock)
+        function loginUser() {
+            const role = loginRole.value;
+            const username = loginUsername.value.trim();
+            const password = loginPassword.value.trim();
+
+            if (!username || !password) {
+                showLoginError('Bitte geben Sie Benutzername und Passwort ein');
+                return;
+            }
+
+            // Mock authentication
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+
+                // For demo purposes, we'll just log in with any credentials
+                currentUser = {
+                    username: username,
+                    role: role
+                };
+
+                // Update UI
+                loginBtn.classList.add('hidden');
+                logoutBtnContainer.classList.remove('hidden');
+                hideLoginModal();
+
+                // Show appropriate section based on role
+                showSection(role);
+
+                // Load data for the section
+                loadSectionData(role);
+            }, 1000);
         }
-        
-        function updateUserLists() {
-            const waiters = users.filter(user => user.role === 'waiter');
-            const makers = users.filter(user => user.role === 'maker');
-            
-            const waitersList = document.getElementById('waitersList');
-            waitersList.innerHTML = '';
-            
-            const makersList = document.getElementById('makersList');
-            makersList.innerHTML = '';
-            
-            waiters.forEach(waiter => {
-                const waiterElement = document.createElement('div');
-                waiterElement.className = 'flex justify-between items-center p-2 bg-white rounded mb-1';
-                waiterElement.innerHTML = `
-                    <span>${waiter.name}</span>
-                    <button onclick="deleteUser('${waiter.id}')" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                waitersList.appendChild(waiterElement);
-            });
-            
-            makers.forEach(maker => {
-                const makerElement = document.createElement('div');
-                makerElement.className = 'flex justify-between items-center p-2 bg-white rounded mb-1';
-                makerElement.innerHTML = `
-                    <span>${maker.name} (Station ${maker.station || 'N/A'})</span>
-                    <button onclick="deleteUser('${maker.id}')" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                makersList.appendChild(makerElement);
-            });
+
+        // Show login error
+        function showLoginError(message) {
+            loginErrorMessage.textContent = message;
+            loginError.classList.remove('hidden');
         }
-        
-        function deleteUser(userId) {
-            if (confirm('Sind Sie sicher, dass Sie diesen Benutzer löschen möchten?')) {
-                // Delete from authentication
-                auth.getUser(userId)
-                    .then(() => {
-                        return auth.deleteUser(userId);
-                    })
-                    .then(() => {
-                        // Delete from database
-                        return database.ref('users/' + userId).remove();
-                    })
-                    .then(() => {
-                        alert('Benutzer erfolgreich gelöscht.');
-                        loadUsers(); // Refresh list
-                    })
-                    .catch(error => {
-                        alert('Fehler beim Löschen des Benutzers: ' + error.message);
-                    });
+
+        // Logout user
+        function logoutUser() {
+            currentUser = null;
+            logoutBtnContainer.classList.add('hidden');
+            loginBtn.classList.remove('hidden');
+            showSection('customer');
+        }
+
+        // Show section based on role or section name
+        function showSection(section) {
+            // Hide all sections first
+            customerSection.classList.add('hidden');
+            makerSection.classList.add('hidden');
+            waiterSection.classList.add('hidden');
+            ownerSection.classList.add('hidden');
+            adminSection.classList.add('hidden');
+
+            // Show the selected section
+            switch(section) {
+                case 'customer':
+                    customerSection.classList.remove('hidden');
+                    break;
+                case 'maker':
+                    makerSection.classList.remove('hidden');
+                    break;
+                case 'waiter':
+                    waiterSection.classList.remove('hidden');
+                    break;
+                case 'owner':
+                    ownerSection.classList.remove('hidden');
+                    break;
+                case 'admin':
+                    adminSection.classList.remove('hidden');
+                    break;
+                default:
+                    customerSection.classList.remove('hidden');
+            }
+
+            // If logged in, show appropriate section for role
+            if (currentUser) {
+                if (currentUser.role === 'admin') {
+                    adminSection.classList.remove('hidden');
+                }
             }
         }
-    </script>
-</body>
+
+        // Load data for the current section
+        function loadSectionData(section) {
+            switch(section) {
+                case 'maker':
+                    loadMakerData();
+                    break;
+                case 'waiter':
+                    loadWaiterData();
+                    break;
+                case 'owner':
+                    loadOwnerData();
+                    break;
+                case 'admin':
+                    loadAdminData();
+                    break;
+            }
+        }
+
+        // Load maker data
+        function loadMakerData() {
+            // In a real app, this would fetch data from Firebase
+            console.log("Loading maker data");
+
+            // For demo, just show no orders
+            currentOrderContainer.classList.add('hidden');
+            noOrderContainer.classList.remove('hidden');
+        }
+
+        // Load waiter data
+        function loadWaiterData() {
+            // In a real app, this would fetch data from Firebase
+            console.log("Loading waiter data");
+
+            // For demo, show some mock active orders
+            updateActiveOrdersList([
+                { id: 'CR10001', time: '10:15', status: 'In Bearbeitung', items: ['Classic Crêpe', 'Chocolate Dream'], total: 12.50 },
+                { id: 'CR10002', time: '10:20', status: 'Wartend', items: ['Berry Bliss'], total: 8.50 }
+            ]);
+        }
+
+        // Load owner data
+        function loadOwnerData() {
+            // In a real app, this would fetch data from Firebase
+            console.log("Loading owner data");
+
+            // For demo, show some mock data
+            todayOrdersCount.textContent = '8';
+            todayRevenue.textContent = '64.50';
+
+            // Update users list
+            updateUsersList([
+                { username: 'admin', role: 'admin' },
+                { username: 'owner1', role: 'owner' },
+                { username: 'waiter1', role: 'waiter' },
+                { username: 'maker1', role: 'maker' },
+                { username: 'maker2', role: 'maker' }
+            ]);
+
+            // Update menu items list
+            updateMenuItemsList(menuItems);
+
+            // Update orders list
+            updateOwnerOrdersList([
+                { id: 'CR10001', time: '10:15', status: 'In Bearbeitung', items: 2, total: 12.50 },
+                { id: 'CR10002', time: '10:20', status: 'Wartend', items: 1, total: 8.50 },
+                { id: 'CR10003', time: '09:45', status: 'Abgeschlossen', items: 3, total: 21.00 }
+            ]);
+
+            // Initialize chart
+            initializeTodaySalesChart();
+        }
+
+        // Load admin data
+        function loadAdminData() {
+            // In a real app, this would fetch data from Firebase
+            console.log("Loading admin data");
+
+            // Update stats
+            activeUsersCount.textContent = '5';
+            waitersCount.textContent = '1';
+            makersCount.textContent = '2';
+            todayOrdersAdminCount.textContent = '8';
+            pendingOrdersCount.textContent = '2';
+            completedOrdersCount.textContent = '6';
+            lastUpdateTime.textContent = new Date().toLocaleTimeString();
+        }
+
+        // Check order status (customer)
+        function checkOrderStatus() {
+            const orderNum = orderNumber.value.trim();
+
+            if (!orderNum) {
+                alert('Bitte geben Sie eine Bestellnummer ein');
+                return;
+            }
+
+            // In a real app, this would check Firebase for the order
+            showLoading();
+
+            setTimeout(() => {
+                hideLoading();
+
+                // Mock response
+                const mockOrder = {
+                    id: orderNum,
+                    status: 'In Bearbeitung',
+                    queuePosition: 2,
+                    waitTime: '15 Minuten',
+                    orderTime: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    items: [
+                        { name: 'Classic Crêpe', price: 5.50 },
+                        { name: 'Chocolate Dream', price: 7.00 }
+                    ]
+                };
+
+                // Display order status
+                displayOrderStatus(mockOrder);
+            }, 1000);
+        }
+
+        // Display order status
+        function displayOrderStatus(order) {
+            displayOrderNumber.textContent = order.id;
+
+            // Set status badge
+            orderStatusBadge.textContent = order.status;
+            if (order.status === 'Fertig') {
+                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800';
+                readyNotification.classList.remove('hidden');
+                almostReadyNotification.classList.add('hidden');
+            } else if (order.status === 'In Bearbeitung') {
+                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800';
+                readyNotification.classList.add('hidden');
+
+                // Show almost ready notification if wait time is <= 5 minutes
+                if (order.waitTime.includes('5') || order.waitTime.includes('weniger')) {
+                    almostReadyNotification.classList.remove('hidden');
+                } else {
+                    almostReadyNotification.classList.add('hidden');
+                }
+            } else {
+                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800';
+                readyNotification.classList.add('hidden');
+                almostReadyNotification.classList.add('hidden');
+            }
+
+            queuePosition.textContent = order.queuePosition;
+            waitTime.textContent = order.waitTime;
+            orderTime.textContent = order.orderTime;
+
+            // Display order items
+            orderItemsList.innerHTML = '';
+            order.items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex justify-between items-center border-b border-gray-100 pb-2';
+                itemElement.innerHTML = `
+                    <span>${item.name}</span>
+                    <span class="font-semibold">€${item.price.toFixed(2)}</span>
+                `;
+                orderItemsList.appendChild(itemElement);
+            });
+
+            // Show the order status container
+            orderStatusContainer.classList.remove('hidden');
+
+            // Scroll to the order status
+            orderStatusContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset order check
+        function resetOrderCheck() {
+            orderNumber.value = '';
+            orderStatusContainer.classList.add('hidden');
+            orderNumber.focus();
+        }
+
+        // Select station (maker)
+        function selectStation(e) {
+            const station = e.currentTarget.getAttribute('data-station');
+            selectedStation = station;
+
+            // Update UI
+            stationBtns.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-green-500');
+            });
+            e.currentTarget.classList.add('ring-2', 'ring-green-500');
+
+            currentStation.textContent = station;
+
+            // In a real app, this would fetch orders for this station from Firebase
+            // For demo, we'll just show a mock order
+            showMockOrderForStation(station);
+        }
+
+        // Show mock order for station (demo)
+        function showMockOrderForStation(station) {
+            // For demo, station 1 gets an order, others get none
+            if (station === '1') {
+                currentOrderContainer.classList.remove('hidden');
+                noOrderContainer.classList.add('hidden');
+
+                makerOrderNumber.textContent = 'CR10001';
+                makerOrderTime.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                // Display order items
+                makerOrderItems.innerHTML = '';
+                const mockItems = [
+                    { name: 'Classic Crêpe', notes: 'Extra Zucker' },
+                    { name: 'Chocolate Dream', notes: 'Ohne Sahne' }
+                ];
+
+                mockItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'luxury-card p-3 mb-2';
+                    itemElement.innerHTML = `
+                        <div class="font-semibold">${item.name}</div>
+                        ${item.notes ? `<div class="text-sm text-gray-600 mt-1">${item.notes}</div>` : ''}
+                    `;
+                    makerOrderItems.appendChild(itemElement);
+                });
+            } else {
+                currentOrderContainer.classList.add('hidden');
+                noOrderContainer.classList.remove('hidden');
+            }
+        }
+
+        // Complete order (maker)
+        function completeOrder() {
+            // In a real app, this would update the order status in Firebase
+            showLoading();
+
+            setTimeout(() => {
+                hideLoading();
+
+                // Show confirmation
+                alert('Bestellung als fertig markiert');
+
+                // Hide current order
+                currentOrderContainer.classList.add('hidden');
+                noOrderContainer.classList.remove('hidden');
+            }, 1000);
+        }
+
+        // Skip order (maker)
+        function skipOrder() {
+            // In a real app, this would move the order to another station in Firebase
+            showLoading();
+
+            setTimeout(() => {
+                hideLoading();
+
+                // Show confirmation
+                alert('Bestellung übersprungen und an nächste Station weitergegeben');
+
+                // Hide current order
+                currentOrderContainer.classList.add('hidden');
+                noOrderContainer.classList.remove('hidden');
+            }, 1000);
+        }
+
+        // Initialize custom crepe ingredients
+        function initializeCustomCrepeIngredients() {
+            const container = customCrepeForm.querySelector('.grid.grid-cols-2.gap-2');
+            container.innerHTML = '';
+
+            customIngredients.forEach(ingredient => {
+                const ingredientElement = document.createElement('div');
+                ingredientElement.className = 'flex items-center';
+                ingredientElement.innerHTML = `
+                    <input type="checkbox" id="ing-${ingredient.name.toLowerCase()}" class="mr-2" data-name="${ingredient.name}" data-price="${ingredient.price}">
+                    <label for="ing-${ingredient.name.toLowerCase()}" class="text-sm">${ingredient.name} (+€${ingredient.price.toFixed(2)})</label>
+                `;
+                container.appendChild(ingredientElement);
+
+                // Add event listener to update price
+                const checkbox = ingredientElement.querySelector('input');
+                checkbox.addEventListener('change', updateCustomCrepePrice);
+            });
+        }
+
+        // Show custom crepe form
+        function showCustomCrepeForm() {
+            customCrepeForm.classList.remove('hidden');
+            customCrepeBtn.classList.add('hidden');
+
+            // Reset form
+            customCrepePrice.textContent = '0.00';
+            customCrepeNotes.value = '';
+
+            // Uncheck all ingredients
+            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        // Hide custom crepe form
+        function hideCustomCrepeForm() {
+            customCrepeForm.classList.add('hidden');
+            customCrepeBtn.classList.remove('hidden');
+        }
+
+        // Update custom crepe price
+        function updateCustomCrepePrice() {
+            let total = 4.50; // Base price for custom crepe
+
+            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                total += parseFloat(checkbox.getAttribute('data-price'));
+            });
+
+            customCrepePrice.textContent = total.toFixed(2);
+        }
+
+        // Add custom crepe to order
+        function addCustomCrepeToOrder() {
+            let ingredients = [];
+            let total = 4.50; // Base price
+
+            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                const name = checkbox.getAttribute('data-name');
+                const price = parseFloat(checkbox.getAttribute('data-price'));
+                ingredients.push(name);
+                total += price;
+            });
+
+            const notes = customCrepeNotes.value.trim();
+
+            // Add to current order
+            currentOrder.push({
+                type: 'custom',
+                name: 'Custom Crêpe',
+                price: total,
+                ingredients: ingredients,
+                notes: notes
+            });
+
+            // Update order display
+            updateCurrentOrderDisplay();
+
+            // Hide the custom crepe form
+            hideCustomCrepeForm();
+        }
+
+        // Add menu item to order
+        function addMenuItemToOrder(e) {
+            const itemId = parseInt(e.currentTarget.getAttribute('data-item'));
+            const menuItem = menuItems.find(item => item.id === itemId);
+
+            if (menuItem) {
+                currentOrder.push({
+                    type: 'menu',
+                    id: menuItem.id,
+                    name: menuItem.name,
+                    price: menuItem.price,
+                    ingredients: menuItem.ingredients
+                });
+
+                // Update order display
+                updateCurrentOrderDisplay();
+            }
+        }
+
+        // Update current order display
+        function updateCurrentOrderDisplay() {
+            if (currentOrder.length === 0) {
+                currentOrderItems.innerHTML = '<p class="text-gray-500 text-center py-4">Noch keine Artikel ausgewählt</p>';
+                orderTotal.textContent = '€0.00';
+                return;
+            }
+
+            currentOrderItems.innerHTML = '';
+            let total = 0;
+
+            currentOrder.forEach((item, index) => {
+                total += item.price;
+
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex justify-between items-center border-b border-gray-100 pb-2';
+
+                let details = '';
+                if (item.type === 'custom' && item.ingredients.length > 0) {
+                    details = `<div class="text-xs text-gray-600 mt-1">Mit: ${item.ingredients.join(', ')}</div>`;
+                }
+                if (item.notes) {
+                    details += `<div class="text-xs text-gray-600 mt-1">Notiz: ${item.notes}</div>`;
+                }
+
+                itemElement.innerHTML = `
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <span>${item.name}</span>
+                            <span class="font-semibold">€${item.price.toFixed(2)}</span>
+                        </div>
+                        ${details}
+                    </div>
+                    <button class="text-red-500 ml-2 remove-item-btn" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+
+                currentOrderItems.appendChild(itemElement);
+            });
+
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                    currentOrder.splice(index, 1);
+                    updateCurrentOrderDisplay();
+                });
+            });
+
+            // Update total
+            orderTotal.textContent = `€${total.toFixed(2)}`;
+        }
+
+        // Submit order (waiter)
+        function submitOrder() {
+            if (currentOrder.length === 0) {
+                alert('Bitte fügen Sie Artikel zur Bestellung hinzu');
+                return;
+            }
+
+            // In a real app, this would save to Firebase
+            showLoading();
+
+            setTimeout(() => {
+                hideLoading();
+
+                // Generate random order number for demo
+                const orderNum = 'CR' + Math.floor(10000 + Math.random() * 90000);
+
+                // Show confirmation
+                confirmationOrderNumber.textContent = orderNum;
+                showOrderConfirmationModal();
+
+                // Reset current order
+                currentOrder = [];
+                updateCurrentOrderDisplay();
+                customerNotes.value = '';
+
+                // Add to active orders (for demo)
+                const newOrder = {
+                    id: orderNum,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    status: 'Wartend',
+                    items: currentOrder.map
 </html>

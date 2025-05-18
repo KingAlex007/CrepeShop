@@ -3,866 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crepe Management System</title>
+    <title>Crêpe Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
+            0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        .float-animation {
+        .floating {
             animation: float 3s ease-in-out infinite;
         }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
         .slide-in {
-            animation: slideIn 0.5s ease-out;
+            animation: slideIn 0.5s forwards;
         }
-        .crepe-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f6e05e;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .bg-cream {
+            background-color: #FFF8E1;
         }
-        .order-card {
+        .bg-light-yellow {
+            background-color: #FFF9C4;
+        }
+        .transition-all {
             transition: all 0.3s ease;
         }
-        .order-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .max-h-0 {
+            max-height: 0;
+            overflow: hidden;
         }
-        @media (max-width: 768px) {
-            .mobile-stack {
-                flex-direction: column;
-            }
-            .mobile-full {
-                width: 100% !important;
-            }
+        .max-h-screen {
+            max-height: 100vh;
         }
     </style>
 </head>
-<body class="bg-yellow-50 min-h-screen">
-    <!-- Firebase Configuration -->
+<body class="bg-cream min-h-screen font-sans">
+    <!-- Firebase Config -->
     <script>
-        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDx2Z3Hj7Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4Q4",
+            authDomain: "crepe-management.firebaseapp.com",
+            databaseURL: "https://crepe-management-default-rtdb.firebaseio.com",
+            projectId: "crepe-management",
+            storageBucket: "crepe-management.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890abcdef"
         };
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
         const auth = firebase.auth();
+        const database = firebase.database();
     </script>
 
     <!-- Main Container -->
     <div class="container mx-auto px-4 py-8">
-        <!-- Header with Role Menu -->
+        <!-- Header -->
         <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-yellow-800">Crepe Management System</h1>
+            <h1 class="text-3xl font-bold text-amber-900">Crêpe Management System</h1>
             <div class="relative">
-                <button id="roleMenuButton" class="p-2 rounded-full hover:bg-yellow-200 transition">
-                    <i class="fas fa-ellipsis-v text-yellow-700 text-xl"></i>
+                <button id="menuToggle" class="p-2 rounded-full hover:bg-amber-200 transition-all">
+                    <i class="fas fa-ellipsis-v text-amber-800 text-xl"></i>
                 </button>
-                <div id="roleMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                    <div class="py-1">
-                        <button onclick="showLogin('customer')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Kundenbereich</button>
-                        <button onclick="showLogin('maker')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Hersteller Login</button>
-                        <button onclick="showLogin('waiter')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Kellner Login</button>
-                        <button onclick="showLogin('owner')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Owner Login</button>
-                        <button onclick="showLogin('admin')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100">Admin Login</button>
-                    </div>
+                <div id="authMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                    <button onclick="showLogin('customer')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Kundenbereich</button>
+                    <button onclick="showLogin('waiter')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Kellner Login</button>
+                    <button onclick="showLogin('maker')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Hersteller Login</button>
+                    <button onclick="showLogin('owner')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Owner Login</button>
+                    <button onclick="showLogin('admin')" class="block w-full text-left px-4 py-2 text-sm text-amber-800 hover:bg-amber-100">Admin Login</button>
                 </div>
             </div>
         </header>
 
-        <!-- Customer View (Default) -->
-        <div id="customerView" class="bg-white rounded-lg shadow-md p-6 mb-8 slide-in">
+        <!-- Customer Section (Default View) -->
+        <section id="customerSection" class="bg-white rounded-lg shadow-md p-6 mb-8 transition-all">
             <div class="text-center mb-8">
-                <div class="float-animation inline-block">
-                    <i class="fas fa-pancakes text-yellow-500 text-6xl"></i>
+                <div class="floating inline-block mb-4">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2965/2965574.png" alt="Crêpe" class="w-24 h-24">
                 </div>
-                <h2 class="text-2xl font-bold text-yellow-800 mt-4">Willkommen beim Crepe Stand!</h2>
-                <p class="text-yellow-600">Geben Sie Ihre Bestellnummer ein, um den Status zu sehen</p>
+                <h2 class="text-2xl font-bold text-amber-900 mb-2">Willkommen beim Crêpe Stand!</h2>
+                <p class="text-amber-800">Überprüfen Sie den Status Ihrer Bestellung</p>
             </div>
             
             <div class="max-w-md mx-auto">
-                <div class="mb-6">
-                    <label for="orderNumber" class="block text-sm font-medium text-yellow-700 mb-2">Bestellnummer</label>
-                    <input type="text" id="orderNumber" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="z.B. CR1234">
+                <div class="mb-4">
+                    <label for="orderNumber" class="block text-amber-800 mb-2">Ihre Bestellnummer:</label>
+                    <input type="text" id="orderNumber" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
-                <button onclick="checkOrderStatus()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
-                    <span>Status prüfen</span>
-                    <i class="fas fa-search ml-2"></i>
+                <button onclick="checkOrderStatus()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition-all pulse">
+                    Status prüfen <i class="fas fa-search ml-2"></i>
                 </button>
             </div>
             
-            <div id="orderStatus" class="hidden mt-8 max-w-md mx-auto bg-yellow-100 border-l-4 border-yellow-500 p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-yellow-800">Bestellung #<span id="displayOrderNumber"></span></h3>
-                        <p class="text-yellow-700">Status: <span id="orderStatusText"></span></p>
-                    </div>
-                    <div id="orderTimer" class="text-2xl font-bold text-yellow-700"></div>
+            <div id="orderStatus" class="hidden mt-8 p-4 bg-amber-50 rounded-lg">
+                <h3 class="text-xl font-bold text-amber-900 mb-4">Bestellstatus</h3>
+                <div class="flex justify-between mb-2">
+                    <span class="text-amber-800">Bestellnummer:</span>
+                    <span id="statusOrderNumber" class="font-bold">#12345</span>
                 </div>
-                <div class="mt-4">
-                    <p class="text-sm text-yellow-600"><span id="ordersBeforeYou"></span> Bestellungen vor Ihnen</p>
-                    <div class="w-full bg-yellow-200 rounded-full h-2.5 mt-2">
-                        <div id="progressBar" class="bg-yellow-600 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-amber-800">Bestellung:</span>
+                    <span id="statusOrderItems" class="font-bold">Crêpe mit Nutella</span>
                 </div>
-                <div id="readyAlert" class="hidden mt-4 pulse-animation bg-yellow-500 text-white p-3 rounded-md text-center">
-                    <i class="fas fa-bell mr-2"></i> Ihre Bestellung ist fertig! Bitte kommen Sie zum Crepe Stand.
+                <div class="flex justify-between mb-2">
+                    <span class="text-amber-800">Position in Warteschlange:</span>
+                    <span id="statusQueuePosition" class="font-bold">3</span>
                 </div>
-            </div>
-            
-            <div class="mt-12 text-center">
-                <h3 class="text-xl font-bold text-yellow-800 mb-4">Aktuelle Wartezeiten</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                    <div class="bg-yellow-100 p-4 rounded-lg">
-                        <div class="text-yellow-700 font-medium">Station 1</div>
-                        <div class="text-2xl font-bold text-yellow-800" id="station1Time">5 min</div>
-                    </div>
-                    <div class="bg-yellow-100 p-4 rounded-lg">
-                        <div class="text-yellow-700 font-medium">Station 2</div>
-                        <div class="text-2xl font-bold text-yellow-800" id="station2Time">7 min</div>
-                    </div>
-                    <div class="bg-yellow-100 p-4 rounded-lg">
-                        <div class="text-yellow-700 font-medium">Station 3</div>
-                        <div class="text-2xl font-bold text-yellow-800" id="station3Time">3 min</div>
-                    </div>
+                <div class="flex justify-between mb-4">
+                    <span class="text-amber-800">Geschätzte Wartezeit:</span>
+                    <span id="statusWaitTime" class="font-bold">15 Minuten</span>
+                </div>
+                <div id="readyAlert" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+                    <p class="font-bold">Ihre Bestellung ist fertig!</p>
+                    <p>Bitte kommen Sie zum Crêpe Stand.</p>
+                </div>
+                <div id="almostReadyAlert" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
+                    <p class="font-bold">Ihre Bestellung wird gleich fertig!</p>
+                    <p>Bitte machen Sie sich in 5 Minuten auf den Weg zum Crêpe Stand.</p>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Login Modals -->
         <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-md">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="loginTitle" class="text-xl font-bold text-yellow-800">Login</h3>
+                    <h3 id="loginTitle" class="text-xl font-bold text-amber-900">Login</h3>
                     <button onclick="hideLogin()" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="mb-4">
-                    <label for="loginUsername" class="block text-sm font-medium text-yellow-700 mb-2">Benutzername</label>
-                    <input type="text" id="loginUsername" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <label for="loginEmail" class="block text-amber-800 mb-2">E-Mail:</label>
+                    <input type="email" id="loginEmail" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div class="mb-6">
-                    <label for="loginPassword" class="block text-sm font-medium text-yellow-700 mb-2">Passwort</label>
-                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <label for="loginPassword" class="block text-amber-800 mb-2">Passwort:</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
-                <button id="loginButton" onclick="login()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                <button id="loginButton" onclick="login()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
                     Einloggen
                 </button>
-            </div>
-        </div>
-
-        <!-- Maker View -->
-        <div id="makerView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-yellow-800">Hersteller Dashboard</h2>
-                <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-yellow-700 mb-2">Station auswählen</label>
-                <div class="flex space-x-4">
-                    <button onclick="selectStation(1)" id="station1Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 1</button>
-                    <button onclick="selectStation(2)" id="station2Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 2</button>
-                    <button onclick="selectStation(3)" id="station3Btn" class="flex-1 py-2 px-4 border border-yellow-300 rounded-md hover:bg-yellow-100 transition">Station 3</button>
-                </div>
-            </div>
-            
-            <div id="makerStationInfo" class="hidden mb-6 p-4 bg-yellow-100 rounded-md">
-                <h3 class="font-bold text-yellow-800 mb-2">Aktuelle Station: <span id="currentStation"></span></h3>
-                <p class="text-yellow-700">Status: <span id="stationStatus">Bereit</span></p>
-            </div>
-            
-            <div id="currentOrder" class="hidden mb-8 p-6 bg-white border border-yellow-200 rounded-lg shadow-sm">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-yellow-800">Aktuelle Bestellung</h3>
-                    <span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">#<span id="currentOrderNumber"></span></span>
-                </div>
-                <div id="orderDetails" class="mb-4">
-                    <!-- Order details will be populated here -->
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button onclick="markOrderAsDone()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        Fertigstellen
-                    </button>
-                    <button onclick="cancelCurrentOrder()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        Stornieren
-                    </button>
-                </div>
-            </div>
-            
-            <div id="noOrders" class="text-center py-8">
-                <div class="inline-block mb-4">
-                    <i class="fas fa-concierge-bell text-yellow-500 text-5xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-yellow-800 mb-2">Keine aktiven Bestellungen</h3>
-                <p class="text-yellow-600">Warten Sie auf neue Bestellungen für Ihre Station</p>
-            </div>
-            
-            <div id="orderQueue" class="mt-8">
-                <h3 class="text-lg font-bold text-yellow-800 mb-4">Warteschlange</h3>
-                <div id="queueList" class="space-y-3">
-                    <!-- Order queue will be populated here -->
+                <div id="makerStationSelection" class="hidden mt-4">
+                    <p class="text-amber-800 mb-2">Wählen Sie Ihre Station:</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="selectMakerStation(1)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 1</button>
+                        <button onclick="selectMakerStation(2)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 2</button>
+                        <button onclick="selectMakerStation(3)" class="bg-amber-200 hover:bg-amber-300 text-amber-800 py-2 rounded-lg transition-all">Station 3</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Waiter View -->
-        <div id="waiterView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- Waiter Dashboard -->
+        <section id="waiterSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-yellow-800">Kellner Dashboard</h2>
-                <div>
-                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
-                    </button>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-yellow-50 p-4 rounded-lg">
-                    <h3 class="font-bold text-yellow-800 mb-3">Vordefinierte Crepes</h3>
-                    <div class="space-y-2">
-                        <button onclick="addPredefinedOrder('Classic', 4.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Classic (Zucker & Zitrone)</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">4.50€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Nutella', 5.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Nutella</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.00€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Erdbeer-Nutella', 6.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Erdbeer-Nutella</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">6.00€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Banane-Nutella', 5.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Banane-Nutella</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.50€</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-yellow-50 p-4 rounded-lg">
-                    <h3 class="font-bold text-yellow-800 mb-3">Beliebte Kombinationen</h3>
-                    <div class="space-y-2">
-                        <button onclick="addPredefinedOrder('Haus-Spezial', 7.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Haus-Spezial</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">7.00€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Kinder-Crepe', 5.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Kinder-Crepe</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">5.50€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Fitness', 6.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Fitness (Honig & Nüsse)</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">6.50€</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-yellow-50 p-4 rounded-lg">
-                    <h3 class="font-bold text-yellow-800 mb-3">Getränke</h3>
-                    <div class="space-y-2">
-                        <button onclick="addPredefinedOrder('Cola', 2.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Cola</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.50€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Wasser', 2.00)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Wasser</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.00€</span>
-                        </button>
-                        <button onclick="addPredefinedOrder('Apfelsaft', 2.50)" class="w-full text-left p-2 hover:bg-yellow-100 rounded flex justify-between items-center">
-                            <span>Apfelsaft</span>
-                            <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">2.50€</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <button onclick="toggleCustomOrderForm()" class="flex items-center text-yellow-700 hover:text-yellow-900">
-                    <i class="fas fa-plus-circle mr-2"></i> Custom Crepe erstellen
+                <h2 class="text-2xl font-bold text-amber-900">Kellner Dashboard</h2>
+                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
                 </button>
-                
-                <div id="customOrderForm" class="hidden mt-4 bg-yellow-50 p-4 rounded-lg">
-                    <h3 class="font-bold text-yellow-800 mb-3">Custom Crepe</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-yellow-700 mb-2">Basis</label>
-                            <select id="baseSelect" class="w-full px-4 py-2 border border-yellow-300 rounded-md">
-                                <option value="Normal">Normal</option>
-                                <option value="Vollkorn">Vollkorn (+0.50€)</option>
-                                <option value="Glutenfrei">Glutenfrei (+1.00€)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-yellow-700 mb-2">Hauptzutat</label>
-                            <select id="mainSelect" class="w-full px-4 py-2 border border-yellow-300 rounded-md">
-                                <option value="Nutella">Nutella</option>
-                                <option value="Zucker-Zitrone">Zucker & Zitrone</option>
-                                <option value="Honig">Honig (+0.50€)</option>
-                                <option value="Marmelade">Marmelade (+0.50€)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-yellow-700 mb-2">Extras (Mehrfachauswahl möglich)</label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Banane (+0.80€)">
-                                <span class="ml-2 text-yellow-700">Banane (+0.80€)</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Erdbeeren (+1.00€)">
-                                <span class="ml-2 text-yellow-700">Erdbeeren (+1.00€)</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Nüsse (+0.50€)">
-                                <span class="ml-2 text-yellow-700">Nüsse (+0.50€)</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" class="form-checkbox text-yellow-600" value="Schokostreusel (+0.50€)">
-                                <span class="ml-2 text-yellow-700">Schokostreusel (+0.50€)</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="font-bold text-yellow-800">Gesamtpreis:</span>
-                            <span id="customOrderPrice" class="ml-2 text-lg font-bold">5.00€</span>
-                        </div>
-                        <button onclick="addCustomOrder()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            Hinzufügen
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white border border-yellow-200 rounded-lg p-4 mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-yellow-800">Aktuelle Bestellung</h3>
-                    <div>
-                        <span class="text-sm text-yellow-600">Gesamt:</span>
-                        <span id="currentOrderTotal" class="ml-2 font-bold text-yellow-800">0.00€</span>
-                    </div>
-                </div>
-                
-                <div id="currentOrderItems" class="mb-4">
-                    <!-- Current order items will be shown here -->
-                    <p class="text-yellow-600 text-center py-4">Noch keine Artikel hinzugefügt</p>
-                </div>
-                
-                <div class="flex justify-between items-center">
-                    <button onclick="clearCurrentOrder()" class="text-red-600 hover:text-red-800 flex items-center">
-                        <i class="fas fa-trash-alt mr-2"></i> Löschen
-                    </button>
-                    <button onclick="submitOrder()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
-                        <i class="fas fa-paper-plane mr-2"></i> Bestellung aufgeben
-                    </button>
-                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h3 class="text-lg font-bold text-yellow-800 mb-3">Aktive Bestellungen</h3>
-                    <div id="activeOrders" class="space-y-3">
-                        <!-- Active orders will be shown here -->
-                        <p class="text-yellow-600 text-center py-4">Keine aktiven Bestellungen</p>
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Vordefinierte Crêpes</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onclick="addToOrder('Nutella Crêpe', 3.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
+                            <span>Nutella Crêpe</span>
+                            <span class="font-bold">€3.50</span>
+                        </button>
+                        <button onclick="addToOrder('Erdbeer Crêpe', 4.00)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
+                            <span>Erdbeer Crêpe</span>
+                            <span class="font-bold">€4.00</span>
+                        </button>
+                        <button onclick="addToOrder('Zimt-Zucker', 2.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
+                            <span>Zimt-Zucker</span>
+                            <span class="font-bold">€2.50</span>
+                        </button>
+                        <button onclick="addToOrder('Banane-Nutella', 4.50)" class="bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 py-2 px-4 rounded-lg transition-all flex justify-between items-center">
+                            <span>Banane-Nutella</span>
+                            <span class="font-bold">€4.50</span>
+                        </button>
                     </div>
                 </div>
                 
-                <div>
-                    <h3 class="text-lg font-bold text-yellow-800 mb-3">Fertige Bestellungen</h3>
-                    <div id="completedOrders" class="space-y-3">
-                        <!-- Completed orders will be shown here -->
-                        <p class="text-yellow-600 text-center py-4">Keine fertigen Bestellungen</p>
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Aktuelle Bestellung</h3>
+                    <div id="currentOrderItems" class="mb-4 max-h-48 overflow-y-auto">
+                        <!-- Order items will be added here -->
                     </div>
+                    <div class="border-t border-amber-200 pt-2 mb-4">
+                        <div class="flex justify-between font-bold text-amber-800">
+                            <span>Gesamt:</span>
+                            <span id="orderTotal">€0.00</span>
+                        </div>
+                    </div>
+                    <button onclick="placeOrder()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                        Bestellung aufgeben <i class="fas fa-paper-plane ml-2"></i>
+                    </button>
                 </div>
             </div>
-        </div>
+            
+            <div class="mt-6 bg-amber-50 p-4 rounded-lg">
+                <h3 class="text-lg font-bold text-amber-800 mb-4">Eigene Crêpe erstellen</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-amber-800 mb-1">Basis:</label>
+                        <select id="baseSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="Weizen">Weizen (€2.00)</option>
+                            <option value="Dinkel">Dinkel (€2.50)</option>
+                            <option value="Buchweizen">Buchweizen (€3.00)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-amber-800 mb-1">Belag:</label>
+                        <select id="toppingSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="Nutella">Nutella (€1.50)</option>
+                            <option value="Erdbeeren">Erdbeeren (€2.00)</option>
+                            <option value="Bananen">Bananen (€1.50)</option>
+                            <option value="Zimt-Zucker">Zimt-Zucker (€0.50)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-amber-800 mb-1">Extras:</label>
+                        <select id="extraSelect" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="Keine">Keine Extras</option>
+                            <option value="Schlagsahne">Schlagsahne (€0.80)</option>
+                            <option value="Eis">Eis (€1.50)</option>
+                            <option value="Nüsse">Nüsse (€1.00)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="addCustomCrepe()" class="mt-4 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    Zum Warenkorb hinzufügen <i class="fas fa-plus ml-2"></i>
+                </button>
+            </div>
+        </section>
 
-        <!-- Owner View -->
-        <div id="ownerView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- Maker Dashboard -->
+        <section id="makerSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-yellow-800">Owner Dashboard</h2>
-                <div class="flex space-x-4">
-                    <button onclick="showAddUserModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
-                        <i class="fas fa-user-plus mr-2"></i> Benutzer hinzufügen
+                <div>
+                    <h2 class="text-2xl font-bold text-amber-900">Hersteller Dashboard</h2>
+                    <p id="makerStationInfo" class="text-amber-700">Station: <span id="currentStation">1</span></p>
+                </div>
+                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
+                </button>
+            </div>
+            
+            <div id="currentOrderContainer" class="bg-amber-50 p-4 rounded-lg mb-4">
+                <h3 class="text-lg font-bold text-amber-800 mb-4">Aktuelle Bestellung</h3>
+                <div id="currentOrderDetails">
+                    <p class="text-center text-amber-700 py-8">Keine aktive Bestellung</p>
+                </div>
+                <div class="flex justify-between mt-4">
+                    <button onclick="markOrderAsDone()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                        Fertigstellen <i class="fas fa-check ml-2"></i>
                     </button>
-                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
+                    <button onclick="skipOrder()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                        Überspringen <i class="fas fa-forward ml-2"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-yellow-100 p-6 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm text-yellow-700">Heutige Bestellungen</p>
-                            <h3 class="text-3xl font-bold text-yellow-800" id="todayOrdersCount">0</h3>
-                        </div>
-                        <div class="bg-yellow-200 p-3 rounded-full">
-                            <i class="fas fa-clipboard-list text-yellow-700"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-yellow-200 rounded-full">
-                            <div id="todayOrdersProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="ordersComparison">0%</span></p>
-                    </div>
-                </div>
-                
-                <div class="bg-yellow-100 p-6 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm text-yellow-700">Heutiger Umsatz</p>
-                            <h3 class="text-3xl font-bold text-yellow-800" id="todayRevenue">0.00€</h3>
-                        </div>
-                        <div class="bg-yellow-200 p-3 rounded-full">
-                            <i class="fas fa-euro-sign text-yellow-700"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-yellow-200 rounded-full">
-                            <div id="todayRevenueProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="revenueComparison">0%</span></p>
-                    </div>
-                </div>
-                
-                <div class="bg-yellow-100 p-6 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm text-yellow-700">Durchschnittliche Wartezeit</p>
-                            <h3 class="text-3xl font-bold text-yellow-800" id="avgWaitTime">0 min</h3>
-                        </div>
-                        <div class="bg-yellow-200 p-3 rounded-full">
-                            <i class="fas fa-clock text-yellow-700"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-yellow-200 rounded-full">
-                            <div id="waitTimeProgress" class="h-2 bg-yellow-600 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-xs text-yellow-700 mt-1">Vergleich zu gestern: <span id="waitTimeComparison">0%</span></p>
-                    </div>
+            <div class="bg-amber-50 p-4 rounded-lg">
+                <h3 class="text-lg font-bold text-amber-800 mb-4">Warteschlange</h3>
+                <div id="orderQueue" class="space-y-2 max-h-64 overflow-y-auto">
+                    <!-- Orders will be added here -->
                 </div>
             </div>
-            
-            <div class="mb-8">
-                <h3 class="text-lg font-bold text-yellow-800 mb-4">Umsatzentwicklung</h3>
-                <div class="bg-white p-4 rounded-lg border border-yellow-200">
-                    <canvas id="revenueChart" height="300"></canvas>
+        </section>
+
+        <!-- Owner Dashboard -->
+        <section id="ownerSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-amber-900">Owner Dashboard</h2>
+                <div>
+                    <button onclick="logout()" class="text-amber-800 hover:text-amber-600 mr-4">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
+                    </button>
+                    <button onclick="showAddUserModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                        Benutzer hinzufügen <i class="fas fa-plus ml-2"></i>
+                    </button>
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                    <h3 class="text-lg font-bold text-yellow-800 mb-4">Beliebteste Crepes</h3>
-                    <div class="bg-white p-4 rounded-lg border border-yellow-200">
-                        <canvas id="popularCrepesChart" height="300"></canvas>
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Bestellstatistiken</h3>
+                    <canvas id="ordersChart" height="200"></canvas>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Umsatzstatistiken</h3>
+                    <canvas id="revenueChart" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Aktive Bestellungen</h3>
+                    <div id="activeOrders" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- Active orders will be added here -->
                     </div>
                 </div>
                 
-                <div>
-                    <h3 class="text-lg font-bold text-yellow-800 mb-4">Bestellungen nach Tageszeit</h3>
-                    <div class="bg-white p-4 rounded-lg border border-yellow-200">
-                        <canvas id="ordersByTimeChart" height="300"></canvas>
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-4">Benutzerverwaltung</h3>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-semibold text-amber-700">Kellner</h4>
+                            <button onclick="toggleUserList('waiters')" class="text-amber-800 hover:text-amber-600">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="waitersList" class="max-h-0 overflow-hidden transition-all duration-300">
+                            <!-- Waiters will be added here -->
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-semibold text-amber-700">Hersteller</h4>
+                            <button onclick="toggleUserList('makers')" class="text-amber-800 hover:text-amber-600">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="makersList" class="max-h-0 overflow-hidden transition-all duration-300">
+                            <!-- Makers will be added here -->
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-yellow-800">Aktive Bestellungen</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="refreshOrders()" class="text-yellow-700 hover:text-yellow-900">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button onclick="exportOrders()" class="text-yellow-700 hover:text-yellow-900">
-                            <i class="fas fa-file-export"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
-                    <table class="min-w-full divide-y divide-yellow-200">
-                        <thead class="bg-yellow-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Bestellnummer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Station</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ownerOrdersList" class="bg-white divide-y divide-yellow-200">
-                            <!-- Active orders will be listed here -->
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-yellow-600">Keine aktiven Bestellungen</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-yellow-800">Mitarbeiter</h3>
-                    <button onclick="refreshUsers()" class="text-yellow-700 hover:text-yellow-900">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
-                    <table class="min-w-full divide-y divide-yellow-200">
-                        <thead class="bg-yellow-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Benutzername</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Rolle</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Erstellt am</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersList" class="bg-white divide-y divide-yellow-200">
-                            <!-- Users will be listed here -->
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-yellow-600">Keine Mitarbeiter gefunden</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <!-- Admin View -->
-        <div id="adminView" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- Admin Dashboard -->
+        <section id="adminSection" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-yellow-800">Admin Dashboard</h2>
-                <div class="flex space-x-4">
-                    <button onclick="showAddUserModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center">
-                        <i class="fas fa-user-plus mr-2"></i> Benutzer hinzufügen
-                    </button>
-                    <button onclick="logout()" class="text-yellow-700 hover:text-yellow-900 flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i> Ausloggen
-                    </button>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <button onclick="switchToView('customer')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
-                    <i class="fas fa-user text-yellow-700 text-2xl mb-2"></i>
-                    <span class="text-yellow-800 font-medium">Kundenansicht</span>
-                </button>
-                <button onclick="switchToView('maker')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
-                    <i class="fas fa-utensils text-yellow-700 text-2xl mb-2"></i>
-                    <span class="text-yellow-800 font-medium">Herstelleransicht</span>
-                </button>
-                <button onclick="switchToView('waiter')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
-                    <i class="fas fa-concierge-bell text-yellow-700 text-2xl mb-2"></i>
-                    <span class="text-yellow-800 font-medium">Kellneransicht</span>
-                </button>
-                <button onclick="switchToView('owner')" class="bg-yellow-100 hover:bg-yellow-200 p-4 rounded-lg flex flex-col items-center transition duration-300">
-                    <i class="fas fa-user-tie text-yellow-700 text-2xl mb-2"></i>
-                    <span class="text-yellow-800 font-medium">Owneransicht</span>
+                <h2 class="text-2xl font-bold text-amber-900">Admin Dashboard</h2>
+                <button onclick="logout()" class="text-amber-800 hover:text-amber-600">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Ausloggen
                 </button>
             </div>
             
-            <div class="mb-8">
-                <h3 class="text-lg font-bold text-yellow-800 mb-4">Systemstatistiken</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-yellow-100 p-6 rounded-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm text-yellow-700">Gesamte Bestellungen</p>
-                                <h3 class="text-3xl font-bold text-yellow-800" id="totalOrdersCount">0</h3>
-                            </div>
-                            <div class="bg-yellow-200 p-3 rounded-full">
-                                <i class="fas fa-clipboard-list text-yellow-700"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-yellow-100 p-6 rounded-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm text-yellow-700">Gesamter Umsatz</p>
-                                <h3 class="text-3xl font-bold text-yellow-800" id="totalRevenue">0.00€</h3>
-                            </div>
-                            <div class="bg-yellow-200 p-3 rounded-full">
-                                <i class="fas fa-euro-sign text-yellow-700"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-yellow-100 p-6 rounded-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm text-yellow-700">Aktive Benutzer</p>
-                                <h3 class="text-3xl font-bold text-yellow-800" id="activeUsersCount">0</h3>
-                            </div>
-                            <div class="bg-yellow-200 p-3 rounded-full">
-                                <i class="fas fa-users text-yellow-700"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <button onclick="switchToSection('customer')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-user text-3xl mb-2"></i>
+                    <span>Kundenbereich</span>
+                </button>
+                <button onclick="switchToSection('waiter')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-concierge-bell text-3xl mb-2"></i>
+                    <span>Kellner Dashboard</span>
+                </button>
+                <button onclick="switchToSection('maker')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-utensils text-3xl mb-2"></i>
+                    <span>Hersteller Dashboard</span>
+                </button>
+                <button onclick="switchToSection('owner')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-user-tie text-3xl mb-2"></i>
+                    <span>Owner Dashboard</span>
+                </button>
+                <button onclick="showAddUserModal()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-user-plus text-3xl mb-2"></i>
+                    <span>Benutzer hinzufügen</span>
+                </button>
+                <button onclick="showSystemSettings()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-4 px-4 rounded-lg transition-all flex flex-col items-center">
+                    <i class="fas fa-cog text-3xl mb-2"></i>
+                    <span>Systemeinstellungen</span>
+                </button>
             </div>
             
-            <div class="mb-8">
-                <h3 class="text-lg font-bold text-yellow-800 mb-4">Systemeinstellungen</h3>
-                <div class="bg-white p-6 rounded-lg border border-yellow-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-yellow-700 mb-2">Standard-Crepe-Preis</label>
-                            <div class="flex">
-                                <input type="number" id="defaultCrepePrice" class="w-full px-4 py-2 border border-yellow-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-yellow-500" value="4.50" step="0.10">
-                                <span class="inline-flex items-center px-3 bg-yellow-100 text-yellow-700 border border-l-0 border-yellow-300 rounded-r-md">€</span>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-yellow-700 mb-2">Durchschnittliche Zubereitungszeit</label>
-                            <div class="flex">
-                                <input type="number" id="avgPrepTime" class="w-full px-4 py-2 border border-yellow-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-yellow-500" value="5" min="1">
-                                <span class="inline-flex items-center px-3 bg-yellow-100 text-yellow-700 border border-l-0 border-yellow-300 rounded-r-md">min</span>
-                            </div>
+            <div class="bg-amber-50 p-4 rounded-lg">
+                <h3 class="text-lg font-bold text-amber-800 mb-4">Systeminformationen</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold text-amber-700 mb-2">Aktive Benutzer</h4>
+                        <div id="activeUsers" class="space-y-2">
+                            <!-- Active users will be added here -->
                         </div>
                     </div>
-                    
-                    <div class="mt-6">
-                        <label class="block text-sm font-medium text-yellow-700 mb-2">Benachrichtigung bei Bestellungsstatus</label>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="enableNotifications" class="form-checkbox h-5 w-5 text-yellow-600" checked>
-                            <span class="ml-2 text-yellow-700">Aktivieren</span>
+                    <div>
+                        <h4 class="font-semibold text-amber-700 mb-2">Letzte Aktivitäten</h4>
+                        <div id="recentActivities" class="space-y-2">
+                            <!-- Recent activities will be added here -->
                         </div>
-                    </div>
-                    
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="saveSystemSettings()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            Einstellungen speichern
-                        </button>
                     </div>
                 </div>
             </div>
-            
-            <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-yellow-800">Alle Bestellungen</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="refreshAllOrders()" class="text-yellow-700 hover:text-yellow-900">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
-                        <button onclick="exportAllOrders()" class="text-yellow-700 hover:text-yellow-900">
-                            <i class="fas fa-file-export"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg border border-yellow-200 overflow-hidden">
-                    <table class="min-w-full divide-y divide-yellow-200">
-                        <thead class="bg-yellow-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Bestellnummer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Preis</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Datum</th>
-                            </tr>
-                        </thead>
-                        <tbody id="allOrdersList" class="bg-white divide-y divide-yellow-200">
-                            <!-- All orders will be listed here -->
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-yellow-600">Keine Bestellungen gefunden</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        </section>
 
         <!-- Add User Modal -->
         <div id="addUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-md">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-yellow-800">Benutzer hinzufügen</h3>
+                    <h3 class="text-xl font-bold text-amber-900">Benutzer hinzufügen</h3>
                     <button onclick="hideAddUserModal()" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
                 <div class="mb-4">
-                    <label for="newUsername" class="block text-sm font-medium text-yellow-700 mb-2">Benutzername</label>
-                    <input type="text" id="newUsername" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <label for="newUserName" class="block text-amber-800 mb-2">Name:</label>
+                    <input type="text" id="newUserName" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
-                
                 <div class="mb-4">
-                    <label for="newUserPassword" class="block text-sm font-medium text-yellow-700 mb-2">Passwort</label>
-                    <input type="password" id="newUserPassword" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <label for="newUserEmail" class="block text-amber-800 mb-2">E-Mail:</label>
+                    <input type="email" id="newUserEmail" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
-                
+                <div class="mb-4">
+                    <label for="newUserPassword" class="block text-amber-800 mb-2">Passwort:</label>
+                    <input type="password" id="newUserPassword" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
                 <div class="mb-6">
-                    <label for="newUserRole" class="block text-sm font-medium text-yellow-700 mb-2">Rolle</label>
-                    <select id="newUserRole" class="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <label for="newUserRole" class="block text-amber-800 mb-2">Rolle:</label>
+                    <select id="newUserRole" class="w-full px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                         <option value="waiter">Kellner</option>
                         <option value="maker">Hersteller</option>
                         <option value="owner">Owner</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                
-                <div class="flex justify-end space-x-3">
-                    <button onclick="hideAddUserModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md transition duration-300">
-                        Abbrechen
-                    </button>
-                    <button onclick="addNewUser()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        Speichern
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Order Details Modal -->
-        <div id="orderDetailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-yellow-800">Bestellungsdetails #<span id="modalOrderNumber"></span></h3>
-                    <button onclick="hideOrderDetailsModal()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div id="modalOrderDetails" class="mb-4">
-                    <!-- Order details will be shown here -->
-                </div>
-                
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <span class="font-bold text-yellow-800">Gesamtpreis:</span>
-                        <span id="modalOrderTotal" class="ml-2 text-lg font-bold">0.00€</span>
-                    </div>
-                    <div>
-                        <span class="font-bold text-yellow-800">Status:</span>
-                        <span id="modalOrderStatus" class="ml-2 px-2 py-1 rounded text-sm bg-yellow-200 text-yellow-800">In Bearbeitung</span>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button onclick="hideOrderDetailsModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        Schließen
-                    </button>
-                </div>
+                <button onclick="addNewUser()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    Benutzer erstellen
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
     <script>
         // Global variables
         let currentUser = null;
         let currentRole = null;
         let currentStation = null;
-        let currentOrder = [];
-        let allOrders = [];
+        let orders = [];
         let users = [];
-        let systemSettings = {
-            defaultCrepePrice: 4.50,
-            avgPrepTime: 5,
-            enableNotifications: true
-        };
+        let orderItems = [];
+        let totalPrice = 0;
+        let ordersChart = null;
+        let revenueChart = null;
         
-        // Chart.js initialization
-        const chartColors = {
-            yellow: {
-                light: '#FEF3C7',
-                medium: '#FCD34D',
-                dark: '#F59E0B'
-            },
-            green: {
-                light: '#D1FAE5',
-                medium: '#6EE7B7',
-                dark: '#10B981'
-            },
-            blue: {
-                light: '#DBEAFE',
-                medium: '#93C5FD',
-                dark: '#3B82F6'
-            }
-        };
-        
-        // DOM Ready
+        // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize UI elements
-            initRoleMenu();
-            updateCustomOrderPrice();
-            
-            // Event listeners for custom order form
-            document.getElementById('baseSelect').addEventListener('change', updateCustomOrderPrice);
-            document.getElementById('mainSelect').addEventListener('change', updateCustomOrderPrice);
-            document.querySelectorAll('#customOrderForm input[type="checkbox"]').forEach(checkbox => {
-                checkbox.addEventListener('change', updateCustomOrderPrice);
+            // Menu toggle
+            document.getElementById('menuToggle').addEventListener('click', function() {
+                document.getElementById('authMenu').classList.toggle('hidden');
             });
             
-            // Load system settings
-            loadSystemSettings();
+            // Close menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!document.getElementById('menuToggle').contains(event.target) && 
+                    !document.getElementById('authMenu').contains(event.target)) {
+                    document.getElementById('authMenu').classList.add('hidden');
+                }
+            });
             
-            // Check if there's a logged in user (for demo purposes)
-            // In a real app, you would check Firebase auth state
-            // simulateLogin('admin', 'admin123', 'admin');
+            // Check if user is already logged in
+            checkAuthState();
+            
+            // Initialize charts (empty for now, will be populated when data is loaded)
+            initializeCharts();
+            
+            // Load initial data
+            loadOrders();
+            loadUsers();
         });
         
-        // Initialize role menu toggle
-        function initRoleMenu() {
-            const roleMenuButton = document.getElementById('roleMenuButton');
-            const roleMenu = document.getElementById('roleMenu');
-            
-            roleMenuButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                roleMenu.classList.toggle('hidden');
-            });
-            
-            document.addEventListener('click', function() {
-                roleMenu.classList.add('hidden');
+        // Check authentication state
+        function checkAuthState() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    // Check user role in database
+                    database.ref('users/' + user.uid).once('value').then(snapshot => {
+                        const userData = snapshot.val();
+                        if (userData) {
+                            currentRole = userData.role;
+                            if (currentRole === 'maker') {
+                                currentStation = userData.station || 1;
+                                document.getElementById('currentStation').textContent = currentStation;
+                            }
+                            showDashboard(currentRole);
+                        }
+                    });
+                } else {
+                    // No user is signed in
+                    currentUser = null;
+                    currentRole = null;
+                    showDashboard('customer');
+                }
             });
         }
         
         // Show login modal for specific role
         function showLogin(role) {
             document.getElementById('loginModal').classList.remove('hidden');
-            document.getElementById('loginTitle').textContent = `${roleToGerman(role)} Login`;
+            document.getElementById('loginTitle').textContent = `${role.charAt(0).toUpperCase() + role.slice(1)} Login`;
             document.getElementById('loginButton').setAttribute('data-role', role);
+            
+            // Show station selection only for makers
+            if (role === 'maker') {
+                document.getElementById('makerStationSelection').classList.remove('hidden');
+            } else {
+                document.getElementById('makerStationSelection').classList.add('hidden');
+            }
+            
+            // Hide auth menu
+            document.getElementById('authMenu').classList.add('hidden');
         }
         
         // Hide login modal
@@ -870,536 +529,664 @@
             document.getElementById('loginModal').classList.add('hidden');
         }
         
-        // Convert role to German display name
-        function roleToGerman(role) {
-            const roles = {
-                'customer': 'Kunde',
-                'maker': 'Hersteller',
-                'waiter': 'Kellner',
-                'owner': 'Owner',
-                'admin': 'Admin'
-            };
-            return roles[role] || role;
+        // Select maker station
+        function selectMakerStation(station) {
+            currentStation = station;
+            document.getElementById('currentStation').textContent = station;
         }
         
         // Login function
         function login() {
-            const username = document.getElementById('loginUsername').value;
+            const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             const role = document.getElementById('loginButton').getAttribute('data-role');
             
-            // Simple validation
-            if (!username || !password) {
-                alert('Bitte Benutzername und Passwort eingeben');
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Check if user has the correct role
+                    return database.ref('users/' + userCredential.user.uid).once('value');
+                })
+                .then(snapshot => {
+                    const userData = snapshot.val();
+                    if (userData && userData.role === role) {
+                        // If maker, update station if selected
+                        if (role === 'maker' && currentStation) {
+                            return database.ref('users/' + currentUser.uid).update({
+                                station: currentStation
+                            });
+                        }
+                    } else {
+                        // Wrong role, sign out
+                        auth.signOut();
+                        alert('Sie haben keine Berechtigung für diese Rolle.');
+                    }
+                })
+                .then(() => {
+                    hideLogin();
+                })
+                .catch(error => {
+                    alert('Login fehlgeschlagen: ' + error.message);
+                });
+        }
+        
+        // Logout function
+        function logout() {
+            auth.signOut().then(() => {
+                currentUser = null;
+                currentRole = null;
+                showDashboard('customer');
+            }).catch(error => {
+                alert('Logout fehlgeschlagen: ' + error.message);
+            });
+        }
+        
+        // Show appropriate dashboard based on role
+        function showDashboard(role) {
+            // Hide all sections first
+            document.getElementById('customerSection').classList.add('hidden');
+            document.getElementById('waiterSection').classList.add('hidden');
+            document.getElementById('makerSection').classList.add('hidden');
+            document.getElementById('ownerSection').classList.add('hidden');
+            document.getElementById('adminSection').classList.add('hidden');
+            
+            // Show the appropriate section
+            if (role === 'customer') {
+                document.getElementById('customerSection').classList.remove('hidden');
+            } else if (role === 'waiter') {
+                document.getElementById('waiterSection').classList.remove('hidden');
+                resetOrder();
+            } else if (role === 'maker') {
+                document.getElementById('makerSection').classList.remove('hidden');
+                updateMakerDashboard();
+            } else if (role === 'owner') {
+                document.getElementById('ownerSection').classList.remove('hidden');
+                updateOwnerDashboard();
+            } else if (role === 'admin') {
+                document.getElementById('adminSection').classList.remove('hidden');
+                updateAdminDashboard();
+            }
+        }
+        
+        // Switch to specific section (for admin)
+        function switchToSection(section) {
+            showDashboard(section);
+        }
+        
+        // Check order status for customer
+        function checkOrderStatus() {
+            const orderNumber = document.getElementById('orderNumber').value;
+            if (!orderNumber) {
+                alert('Bitte geben Sie eine Bestellnummer ein.');
                 return;
             }
             
-            // In a real app, you would authenticate with Firebase
-            // For this demo, we'll simulate authentication
-            simulateLogin(username, password, role);
+            // In a real app, this would query the database
+            // For demo purposes, we'll simulate a response
+            const orderStatus = document.getElementById('orderStatus');
+            orderStatus.classList.remove('hidden');
+            
+            document.getElementById('statusOrderNumber').textContent = '#' + orderNumber;
+            
+            // Simulate random order details
+            const items = ['Nutella Crêpe', 'Erdbeer Crêpe', 'Zimt-Zucker', 'Banane-Nutella'];
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            document.getElementById('statusOrderItems').textContent = randomItem;
+            
+            const queuePosition = Math.floor(Math.random() * 5) + 1;
+            document.getElementById('statusQueuePosition').textContent = queuePosition;
+            
+            const waitTime = queuePosition * 5;
+            document.getElementById('statusWaitTime').textContent = waitTime + ' Minuten';
+            
+            // Show alerts based on wait time
+            document.getElementById('readyAlert').classList.add('hidden');
+            document.getElementById('almostReadyAlert').classList.add('hidden');
+            
+            if (waitTime <= 5) {
+                if (waitTime <= 0) {
+                    document.getElementById('readyAlert').classList.remove('hidden');
+                } else {
+                    document.getElementById('almostReadyAlert').classList.remove('hidden');
+                }
+            }
+            
+            // Add animation
+            orderStatus.classList.add('slide-in');
         }
         
-        // Simulate login (replace with Firebase auth in real app)
-        function simulateLogin(username, password, role) {
-            // Hide login modal
-            hideLogin();
+        // Waiter functions
+        function addToOrder(item, price) {
+            orderItems.push({ item, price });
+            updateOrderDisplay();
+        }
+        
+        function addCustomCrepe() {
+            const base = document.getElementById('baseSelect').value;
+            const topping = document.getElementById('toppingSelect').value;
+            const extra = document.getElementById('extraSelect').value;
             
-            // Set current user
-            currentUser = {
-                username: username,
-                role: role
+            // Calculate price based on selections
+            let price = 0;
+            if (base.includes('Weizen')) price += 2.00;
+            else if (base.includes('Dinkel')) price += 2.50;
+            else if (base.includes('Buchweizen')) price += 3.00;
+            
+            if (topping.includes('Nutella')) price += 1.50;
+            else if (topping.includes('Erdbeeren')) price += 2.00;
+            else if (topping.includes('Bananen')) price += 1.50;
+            else if (topping.includes('Zimt-Zucker')) price += 0.50;
+            
+            if (extra.includes('Schlagsahne')) price += 0.80;
+            else if (extra.includes('Eis')) price += 1.50;
+            else if (extra.includes('Nüsse')) price += 1.00;
+            
+            const itemName = `${base.split(' ')[0]} Crêpe mit ${topping}` + (extra !== 'Keine' ? ` und ${extra}` : '');
+            addToOrder(itemName, price);
+        }
+        
+        function updateOrderDisplay() {
+            const orderItemsContainer = document.getElementById('currentOrderItems');
+            orderItemsContainer.innerHTML = '';
+            
+            totalPrice = 0;
+            
+            orderItems.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex justify-between items-center mb-2';
+                itemElement.innerHTML = `
+                    <span class="text-amber-800">${item.item}</span>
+                    <div class="flex items-center">
+                        <span class="font-bold mr-4">€${item.price.toFixed(2)}</span>
+                        <button onclick="removeOrderItem(${index})" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                orderItemsContainer.appendChild(itemElement);
+                totalPrice += item.price;
+            });
+            
+            document.getElementById('orderTotal').textContent = `€${totalPrice.toFixed(2)}`;
+        }
+        
+        function removeOrderItem(index) {
+            orderItems.splice(index, 1);
+            updateOrderDisplay();
+        }
+        
+        function resetOrder() {
+            orderItems = [];
+            totalPrice = 0;
+            updateOrderDisplay();
+        }
+        
+        function placeOrder() {
+            if (orderItems.length === 0) {
+                alert('Bitte fügen Sie Artikel zur Bestellung hinzu.');
+                return;
+            }
+            
+            // Generate random order number
+            const orderNumber = Math.floor(10000 + Math.random() * 90000);
+            
+            // Create order object
+            const order = {
+                id: orderNumber.toString(),
+                items: orderItems,
+                total: totalPrice,
+                status: 'pending',
+                timestamp: new Date().getTime(),
+                waiterId: currentUser.uid
             };
-            currentRole = role;
             
-            // Show appropriate view based on role
-            showViewForRole(role);
-            
-            // Load data for the view
-            loadDataForView(role);
-            
-            // Clear login form
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-        }
-        
-        // Show appropriate view based on user role
-        function showViewForRole(role) {
-            // Hide all views first
-            document.getElementById('customerView').classList.add('hidden');
-            document.getElementById('makerView').classList.add('hidden');
-            document.getElementById('waiterView').classList.add('hidden');
-            document.getElementById('ownerView').classList.add('hidden');
-            document.getElementById('adminView').classList.add('hidden');
-            
-            // Show the correct view
-            if (role === 'customer') {
-                document.getElementById('customerView').classList.remove('hidden');
-            } else if (role === 'maker') {
-                document.getElementById('makerView').classList.remove('hidden');
-            } else if (role === 'waiter') {
-                document.getElementById('waiterView').classList.remove('hidden');
-            } else if (role === 'owner') {
-                document.getElementById('ownerView').classList.remove('hidden');
-            } else if (role === 'admin') {
-                document.getElementById('adminView').classList.remove('hidden');
-            }
-        }
-        
-        // Load data for the current view
-        function loadDataForView(role) {
-            // In a real app, you would fetch data from Firebase
-            // For this demo, we'll simulate data loading
-            
-            if (role === 'customer') {
-                // Nothing special to load for customer view
-            } else if (role === 'maker') {
-                // Load maker data
-                loadMakerData();
-            } else if (role === 'waiter') {
-                // Load waiter data
-                loadWaiterData();
-            } else if (role === 'owner' || role === 'admin') {
-                // Load owner/admin data
-                loadOwnerData();
-                if (role === 'admin') {
-                    loadAdminData();
-                }
-            }
-        }
-        
-        // Load maker data
-        function loadMakerData() {
-            // Simulate loading orders for maker
-            simulateOrdersForMaker();
-        }
-        
-        // Load waiter data
-        function loadWaiterData() {
-            // Simulate loading orders for waiter
-            simulateOrdersForWaiter();
-        }
-        
-        // Load owner data
-        function loadOwnerData() {
-            // Simulate loading data for owner
-            simulateDataForOwner();
-            
-            // Initialize charts
-            initCharts();
-        }
-        
-        // Load admin data
-        function loadAdminData() {
-            // Simulate loading data for admin
-            simulateDataForAdmin();
-        }
-        
-        // Simulate orders for maker view
-        function simulateOrdersForMaker() {
-            // This would come from Firebase in a real app
-            const orders = [
-                {
-                    id: 'CR1001',
-                    items: [
-                        { name: 'Nutella Crepe', price: 5.00 },
-                        { name: 'Cola', price: 2.50 }
-                    ],
-                    status: 'in_progress',
-                    station: 1,
-                    timestamp: new Date().getTime() - 60000 // 1 minute ago
-                },
-                {
-                    id: 'CR1002',
-                    items: [
-                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
-                    ],
-                    status: 'queued',
-                    station: 1,
-                    timestamp: new Date().getTime()
-                },
-                {
-                    id: 'CR1003',
-                    items: [
-                        { name: 'Classic Crepe', price: 4.50 },
-                        { name: 'Apfelsaft', price: 2.50 }
-                    ],
-                    status: 'queued',
-                    station: 2,
-                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
-                }
-            ];
-            
-            // Display orders based on selected station
-            updateMakerOrdersDisplay(orders);
-        }
-        
-        // Simulate orders for waiter view
-        function simulateOrdersForWaiter() {
-            // This would come from Firebase in a real app
-            const activeOrders = [
-                {
-                    id: 'CR1001',
-                    items: [
-                        { name: 'Nutella Crepe', price: 5.00 },
-                        { name: 'Cola', price: 2.50 }
-                    ],
-                    status: 'in_progress',
-                    station: 1,
-                    total: 7.50,
-                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
-                }
-            ];
-            
-            const completedOrders = [
-                {
-                    id: 'CR999',
-                    items: [
-                        { name: 'Classic Crepe', price: 4.50 },
-                        { name: 'Wasser', price: 2.00 }
-                    ],
-                    status: 'completed',
-                    station: 2,
-                    total: 6.50,
-                    timestamp: new Date().getTime() - 3600000 // 1 hour ago
-                }
-            ];
-            
-            // Display orders
-            updateWaiterOrdersDisplay(activeOrders, completedOrders);
-        }
-        
-        // Simulate data for owner view
-        function simulateDataForOwner() {
-            // This would come from Firebase in a real app
-            const orders = [
-                {
-                    id: 'CR1001',
-                    items: [
-                        { name: 'Nutella Crepe', price: 5.00 },
-                        { name: 'Cola', price: 2.50 }
-                    ],
-                    status: 'in_progress',
-                    station: 1,
-                    total: 7.50,
-                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
-                },
-                {
-                    id: 'CR1002',
-                    items: [
-                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
-                    ],
-                    status: 'queued',
-                    station: 1,
-                    total: 6.00,
-                    timestamp: new Date().getTime() - 60000 // 1 minute ago
-                },
-                {
-                    id: 'CR1003',
-                    items: [
-                        { name: 'Classic Crepe', price: 4.50 },
-                        { name: 'Apfelsaft', price: 2.50 }
-                    ],
-                    status: 'queued',
-                    station: 2,
-                    total: 7.00,
-                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
-                }
-            ];
-            
-            const users = [
-                {
-                    username: 'chef1',
-                    role: 'owner',
-                    created: new Date().getTime() - 86400000 // 1 day ago
-                },
-                {
-                    username: 'maker1',
-                    role: 'maker',
-                    created: new Date().getTime() - 43200000 // 12 hours ago
-                },
-                {
-                    username: 'waiter1',
-                    role: 'waiter',
-                    created: new Date().getTime() - 21600000 // 6 hours ago
-                }
-            ];
-            
-            // Display data
-            updateOwnerOrdersDisplay(orders);
-            updateUsersList(users);
-            
-            // Update stats
-            updateOwnerStats(orders, users);
-        }
-        
-        // Simulate data for admin view
-        function simulateDataForAdmin() {
-            // This would come from Firebase in a real app
-            const allOrders = [
-                {
-                    id: 'CR1001',
-                    items: [
-                        { name: 'Nutella Crepe', price: 5.00 },
-                        { name: 'Cola', price: 2.50 }
-                    ],
-                    status: 'in_progress',
-                    station: 1,
-                    total: 7.50,
-                    timestamp: new Date().getTime() - 120000 // 2 minutes ago
-                },
-                {
-                    id: 'CR1002',
-                    items: [
-                        { name: 'Erdbeer-Nutella Crepe', price: 6.00 }
-                    ],
-                    status: 'queued',
-                    station: 1,
-                    total: 6.00,
-                    timestamp: new Date().getTime() - 60000 // 1 minute ago
-                },
-                {
-                    id: 'CR1003',
-                    items: [
-                        { name: 'Classic Crepe', price: 4.50 },
-                        { name: 'Apfelsaft', price: 2.50 }
-                    ],
-                    status: 'queued',
-                    station: 2,
-                    total: 7.00,
-                    timestamp: new Date().getTime() - 30000 // 30 seconds ago
-                },
-                {
-                    id: 'CR999',
-                    items: [
-                        { name: 'Classic Crepe', price: 4.50 },
-                        { name: 'Wasser', price: 2.00 }
-                    ],
-                    status: 'completed',
-                    station: 2,
-                    total: 6.50,
-                    timestamp: new Date().getTime() - 3600000 // 1 hour ago
-                },
-                {
-                    id: 'CR998',
-                    items: [
-                        { name: 'Haus-Spezial', price: 7.00 }
-                    ],
-                    status: 'completed',
-                    station: 3,
-                    total: 7.00,
-                    timestamp: new Date().getTime() - 7200000 // 2 hours ago
-                }
-            ];
-            
-            // Display all orders
-            updateAllOrdersList(allOrders);
-            
-            // Update admin stats
-            updateAdminStats(allOrders);
-        }
-        
-        // Update maker orders display
-        function updateMakerOrdersDisplay(orders) {
-            const currentOrderContainer = document.getElementById('currentOrder');
-            const noOrdersContainer = document.getElementById('noOrders');
-            const queueList = document.getElementById('queueList');
-            
-            if (currentStation) {
-                // Filter orders for current station
-                const stationOrders = orders.filter(order => order.station === currentStation);
-                const inProgressOrder = stationOrders.find(order => order.status === 'in_progress');
-                const queuedOrders = stationOrders.filter(order => order.status === 'queued');
-                
-                if (inProgressOrder) {
-                    // Show current order
-                    currentOrderContainer.classList.remove('hidden');
-                    noOrdersContainer.classList.add('hidden');
-                    
-                    document.getElementById('currentOrderNumber').textContent = inProgressOrder.id;
-                    
-                    const orderDetails = document.getElementById('orderDetails');
-                    orderDetails.innerHTML = '';
-                    
-                    inProgressOrder.items.forEach(item => {
-                        const itemElement = document.createElement('div');
-                        itemElement.className = 'flex justify-between py-1 border-b border-yellow-100';
-                        itemElement.innerHTML = `
-                            <span>${item.name}</span>
-                            <span class="font-bold">${item.price.toFixed(2)}€</span>
-                        `;
-                        orderDetails.appendChild(itemElement);
-                    });
-                    
-                    // Calculate time elapsed
-                    const elapsedMinutes = Math.floor((new Date().getTime() - inProgressOrder.timestamp) / 60000);
-                    document.getElementById('stationStatus').textContent = `In Bearbeitung (${elapsedMinutes} min)`;
-                } else {
-                    // No current order
-                    currentOrderContainer.classList.add('hidden');
-                    
-                    if (queuedOrders.length > 0) {
-                        noOrdersContainer.classList.add('hidden');
-                    } else {
-                        noOrdersContainer.classList.remove('hidden');
-                    }
-                }
-                
-                // Update queue
-                queueList.innerHTML = '';
-                
-                if (queuedOrders.length > 0) {
-                    queuedOrders.forEach(order => {
-                        const orderElement = document.createElement('div');
-                        orderElement.className = 'order-card bg-yellow-50 p-3 rounded-lg';
-                        orderElement.innerHTML = `
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="font-bold">#${order.id}</span>
-                                <span class="text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded">Wartend</span>
-                            </div>
-                            <div class="text-sm text-yellow-700">
-                                ${order.items.map(item => item.name).join(', ')}
-                            </div>
-                        `;
-                        queueList.appendChild(orderElement);
-                    });
-                } else {
-                    const emptyElement = document.createElement('div');
-                    emptyElement.className = 'text-center text-yellow-600 py-4';
-                    emptyElement.textContent = 'Keine Bestellungen in der Warteschlange';
-                    queueList.appendChild(emptyElement);
-                }
-            } else {
-                // No station selected
-                currentOrderContainer.classList.add('hidden');
-                noOrdersContainer.classList.remove('hidden');
-                queueList.innerHTML = '';
-                
-                const emptyElement = document.createElement('div');
-                emptyElement.className = 'text-center text-yellow-600 py-4';
-                emptyElement.textContent = 'Bitte wählen Sie eine Station aus';
-                queueList.appendChild(emptyElement);
-            }
-        }
-        
-        // Update waiter orders display
-        function updateWaiterOrdersDisplay(activeOrders, completedOrders) {
-            const currentOrderTotal = document.getElementById('currentOrderTotal');
-            const currentOrderItems = document.getElementById('currentOrderItems');
-            const activeOrdersContainer = document.getElementById('activeOrders');
-            const completedOrdersContainer = document.getElementById('completedOrders');
-            
-            // Update current order total
-            const total = currentOrder.reduce((sum, item) => sum + item.price, 0);
-            currentOrderTotal.textContent = `${total.toFixed(2)}€`;
-            
-            // Update current order items
-            currentOrderItems.innerHTML = '';
-            
-            if (currentOrder.length > 0) {
-                currentOrder.forEach((item, index) => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'flex justify-between items-center py-2 border-b border-yellow-100';
-                    itemElement.innerHTML = `
-                        <span>${item.name}</span>
-                        <div class="flex items-center">
-                            <span class="font-bold mr-4">${item.price.toFixed(2)}€</span>
-                            <button onclick="removeOrderItem(${index})" class="text-red-500 hover:text-red-700">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `;
-                    currentOrderItems.appendChild(itemElement);
+            // Save to database
+            database.ref('orders/' + orderNumber).set(order)
+                .then(() => {
+                    alert(`Bestellung #${orderNumber} erfolgreich aufgegeben!`);
+                    resetOrder();
+                    loadOrders(); // Refresh orders list
+                })
+                .catch(error => {
+                    alert('Fehler beim Aufgeben der Bestellung: ' + error.message);
                 });
-            } else {
-                const emptyElement = document.createElement('p');
-                emptyElement.className = 'text-yellow-600 text-center py-4';
-                emptyElement.textContent = 'Noch keine Artikel hinzugefügt';
-                currentOrderItems.appendChild(emptyElement);
-            }
+        }
+        
+        // Maker functions
+        function updateMakerDashboard() {
+            if (currentRole !== 'maker') return;
+            
+            // Get orders for this station
+            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
+                .then(snapshot => {
+                    const orders = [];
+                    snapshot.forEach(childSnapshot => {
+                        orders.push(childSnapshot.val());
+                    });
+                    
+                    // Sort by timestamp (oldest first)
+                    orders.sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    // Display current order (first in queue)
+                    const currentOrderContainer = document.getElementById('currentOrderDetails');
+                    const orderQueueContainer = document.getElementById('orderQueue');
+                    
+                    currentOrderContainer.innerHTML = '';
+                    orderQueueContainer.innerHTML = '';
+                    
+                    if (orders.length > 0) {
+                        const currentOrder = orders[0];
+                        displayOrderDetails(currentOrderContainer, currentOrder, true);
+                        
+                        // Display queue (remaining orders)
+                        for (let i = 1; i < orders.length; i++) {
+                            const orderElement = document.createElement('div');
+                            orderElement.className = 'bg-white p-3 rounded-lg border border-amber-200';
+                            displayOrderDetails(orderElement, orders[i], false);
+                            orderQueueContainer.appendChild(orderElement);
+                        }
+                    } else {
+                        currentOrderContainer.innerHTML = '<p class="text-center text-amber-700 py-8">Keine aktive Bestellung</p>';
+                    }
+                });
+        }
+        
+        function displayOrderDetails(container, order, isCurrent) {
+            container.innerHTML = `
+                <div class="mb-2">
+                    <span class="text-amber-700">Bestellnummer:</span>
+                    <span class="font-bold">#${order.id}</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-amber-700">Bestellung:</span>
+                    <ul class="list-disc list-inside ml-2">
+                        ${order.items.map(item => `<li>${item.item} (€${item.price.toFixed(2)})</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="mb-2">
+                    <span class="text-amber-700">Gesamtpreis:</span>
+                    <span class="font-bold">€${order.total.toFixed(2)}</span>
+                </div>
+                ${isCurrent ? `
+                <div class="mt-4 text-sm text-amber-700">
+                    <i class="fas fa-clock mr-1"></i> ${new Date(order.timestamp).toLocaleTimeString()}
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        function markOrderAsDone() {
+            // Get the current order (first in queue)
+            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
+                .then(snapshot => {
+                    const orders = [];
+                    snapshot.forEach(childSnapshot => {
+                        orders.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                    
+                    if (orders.length > 0) {
+                        const currentOrder = orders[0];
+                        
+                        // Update order status to 'done'
+                        return database.ref('orders/' + currentOrder.id).update({
+                            status: 'done',
+                            makerId: currentUser.uid,
+                            completedAt: new Date().getTime()
+                        });
+                    }
+                })
+                .then(() => {
+                    updateMakerDashboard();
+                    loadOrders(); // Refresh orders list for owner
+                })
+                .catch(error => {
+                    alert('Fehler beim Markieren der Bestellung: ' + error.message);
+                });
+        }
+        
+        function skipOrder() {
+            // Get the current order (first in queue)
+            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
+                .then(snapshot => {
+                    const orders = [];
+                    snapshot.forEach(childSnapshot => {
+                        orders.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
+                    
+                    if (orders.length > 0) {
+                        const currentOrder = orders[0];
+                        
+                        // Move to end of queue by updating timestamp
+                        return database.ref('orders/' + currentOrder.id).update({
+                            timestamp: new Date().getTime()
+                        });
+                    }
+                })
+                .then(() => {
+                    updateMakerDashboard();
+                })
+                .catch(error => {
+                    alert('Fehler beim Überspringen der Bestellung: ' + error.message);
+                });
+        }
+        
+        // Owner functions
+        function updateOwnerDashboard() {
+            if (currentRole !== 'owner' && currentRole !== 'admin') return;
             
             // Update active orders
-            activeOrdersContainer.innerHTML = '';
-            
-            if (activeOrders.length > 0) {
-                activeOrders.forEach(order => {
-                    const orderElement = document.createElement('div');
-                    orderElement.className = 'order-card bg-white border border-yellow-200 p-4 rounded-lg';
-                    orderElement.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold">#${order.id}</span>
-                            <span class="text-sm bg-yellow-200 text-yellow-800 px-2 py-1 rounded">In Bearbeitung</span>
-                        </div>
-                        <div class="text-sm text-yellow-700 mb-2">
-                            ${order.items.map(item => item.name).join(', ')}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">${order.total.toFixed(2)}€</span>
-                            <button onclick="viewOrderDetails('${order.id}')" class="text-yellow-700 hover:text-yellow-900 text-sm">
-                                <i class="fas fa-eye mr-1"></i> Details
-                            </button>
-                        </div>
-                    `;
-                    activeOrdersContainer.appendChild(orderElement);
+            database.ref('orders').orderByChild('status').equalTo('pending').once('value')
+                .then(snapshot => {
+                    const activeOrdersContainer = document.getElementById('activeOrders');
+                    activeOrdersContainer.innerHTML = '';
+                    
+                    const orders = [];
+                    snapshot.forEach(childSnapshot => {
+                        orders.push(childSnapshot.val());
+                    });
+                    
+                    // Sort by timestamp (oldest first)
+                    orders.sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    if (orders.length > 0) {
+                        orders.forEach(order => {
+                            const orderElement = document.createElement('div');
+                            orderElement.className = 'bg-white p-3 rounded-lg border border-amber-200';
+                            orderElement.innerHTML = `
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold">#${order.id}</span>
+                                    <span class="text-sm text-amber-700">${new Date(order.timestamp).toLocaleTimeString()}</span>
+                                </div>
+                                <div class="text-sm text-amber-800">
+                                    ${order.items.length} Artikel - €${order.total.toFixed(2)}
+                                </div>
+                            `;
+                            activeOrdersContainer.appendChild(orderElement);
+                        });
+                    } else {
+                        activeOrdersContainer.innerHTML = '<p class="text-center text-amber-700 py-4">Keine aktive Bestellungen</p>';
+                    }
                 });
-            } else {
-                const emptyElement = document.createElement('p');
-                emptyElement.className = 'text-yellow-600 text-center py-4';
-                emptyElement.textContent = 'Keine aktiven Bestellungen';
-                activeOrdersContainer.appendChild(emptyElement);
+            
+            // Update charts
+            updateCharts();
+        }
+        
+        function initializeCharts() {
+            const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+            ordersChart = new Chart(ordersCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Heute', 'Gestern', 'Vorgestern'],
+                    datasets: [{
+                        label: 'Bestellungen',
+                        data: [0, 0, 0],
+                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'Umsatz (€)',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateCharts() {
+            // In a real app, this would fetch actual data from the database
+            // For demo purposes, we'll use random data
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const dayBefore = new Date(today);
+            dayBefore.setDate(dayBefore.getDate() - 2);
+            
+            ordersChart.data.labels = [
+                today.toLocaleDateString(),
+                yesterday.toLocaleDateString(),
+                dayBefore.toLocaleDateString()
+            ];
+            
+            ordersChart.data.datasets[0].data = [
+                Math.floor(Math.random() * 20) + 10,
+                Math.floor(Math.random() * 20) + 10,
+                Math.floor(Math.random() * 20) + 10
+            ];
+            
+            revenueChart.data.datasets[0].data = [
+                Math.floor(Math.random() * 500) + 200,
+                Math.floor(Math.random() * 500) + 200,
+                Math.floor(Math.random() * 500) + 200,
+                Math.floor(Math.random() * 500) + 200,
+                Math.floor(Math.random() * 500) + 200,
+                Math.floor(Math.random() * 500) + 200
+            ];
+            
+            ordersChart.update();
+            revenueChart.update();
+        }
+        
+        function toggleUserList(type) {
+            const listElement = document.getElementById(`${type}List`);
+            listElement.classList.toggle('max-h-0');
+            listElement.classList.toggle('max-h-screen');
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+        }
+        
+        function hideAddUserModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+        }
+        
+        function addNewUser() {
+            const name = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value;
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+            
+            if (!name || !email || !password) {
+                alert('Bitte füllen Sie alle Felder aus.');
+                return;
             }
             
-            // Update completed orders
-            completedOrdersContainer.innerHTML = '';
-            
-            if (completedOrders.length > 0) {
-                completedOrders.forEach(order => {
-                    const orderElement = document.createElement('div');
-                    orderElement.className = 'order-card bg-white border border-green-200 p-4 rounded-lg';
-                    orderElement.innerHTML = `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold">#${order.id}</span>
-                            <span class="text-sm bg-green-200 text-green-800 px-2 py-1 rounded">Fertig</span>
-                        </div>
-                        <div class="text-sm text-yellow-700 mb-2">
-                            ${order.items.map(item => item.name).join(', ')}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">${order.total.toFixed(2)}€</span>
-                            <button onclick="viewOrderDetails('${order.id}')" class="text-yellow-700 hover:text-yellow-900 text-sm">
-                                <i class="fas fa-eye mr-1"></i> Details
-                            </button>
-                        </div>
-                    `;
-                    completedOrdersContainer.appendChild(orderElement);
+            // Create user in Firebase Auth
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Save additional user data to database
+                    return database.ref('users/' + userCredential.user.uid).set({
+                        name: name,
+                        email: email,
+                        role: role,
+                        createdAt: new Date().getTime()
+                    });
+                })
+                .then(() => {
+                    alert('Benutzer erfolgreich erstellt!');
+                    hideAddUserModal();
+                    loadUsers(); // Refresh users list
+                })
+                .catch(error => {
+                    alert('Fehler beim Erstellen des Benutzers: ' + error.message);
                 });
-            } else {
-                const emptyElement = document.createElement('p');
-                emptyElement.className = 'text-yellow-600 text-center py-4';
-                emptyElement.textContent = 'Keine fertigen Bestellungen';
-                completedOrdersContainer.appendChild(emptyElement);
+        }
+        
+        // Admin functions
+        function updateAdminDashboard() {
+            if (currentRole !== 'admin') return;
+            
+            // Load active users
+            database.ref('users').once('value')
+                .then(snapshot => {
+                    const activeUsersContainer = document.getElementById('activeUsers');
+                    activeUsersContainer.innerHTML = '';
+                    
+                    snapshot.forEach(childSnapshot => {
+                        const user = childSnapshot.val();
+                        const userElement = document.createElement('div');
+                        userElement.className = 'bg-white p-2 rounded-lg border border-amber-200';
+                        userElement.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold">${user.name}</span>
+                                <span class="text-xs px-2 py-1 rounded ${getRoleColor(user.role)}">${user.role}</span>
+                            </div>
+                            <div class="text-xs text-amber-700">${user.email}</div>
+                        `;
+                        activeUsersContainer.appendChild(userElement);
+                    });
+                });
+            
+            // Load recent activities (simulated)
+            const activitiesContainer = document.getElementById('recentActivities');
+            activitiesContainer.innerHTML = '';
+            
+            const activities = [
+                { action: 'Bestellung aufgegeben', user: 'Max Mustermann', time: 'vor 2 Minuten' },
+                { action: 'Bestellung fertiggestellt', user: 'Erika Musterfrau', time: 'vor 5 Minuten' },
+                { action: 'Neuer Benutzer erstellt', user: 'Admin', time: 'vor 15 Minuten' },
+                { action: 'Systemaktualisierung', user: 'System', time: 'vor 1 Stunde' }
+            ];
+            
+            activities.forEach(activity => {
+                const activityElement = document.createElement('div');
+                activityElement.className = 'bg-white p-2 rounded-lg border border-amber-200';
+                activityElement.innerHTML = `
+                    <div class="text-sm font-semibold">${activity.action}</div>
+                    <div class="flex justify-between text-xs text-amber-700">
+                        <span>${activity.user}</span>
+                        <span>${activity.time}</span>
+                    </div>
+                `;
+                activitiesContainer.appendChild(activityElement);
+            });
+        }
+        
+        function getRoleColor(role) {
+            switch(role) {
+                case 'admin': return 'bg-purple-100 text-purple-800';
+                case 'owner': return 'bg-blue-100 text-blue-800';
+                case 'waiter': return 'bg-green-100 text-green-800';
+                case 'maker': return 'bg-yellow-100 text-yellow-800';
+                default: return 'bg-gray-100 text-gray-800';
             }
         }
         
-        // Update owner orders display
-        function updateOwnerOrdersDisplay(orders) {
-            const ownerOrdersList = document.getElementById('ownerOrdersList');
-            
-            ownerOrdersList.innerHTML = '';
-            
-            if (orders.length > 0) {
-                orders.forEach(order => {
-                    const row = document.createElement('tr');
+        function showSystemSettings() {
+            alert('Systemeinstellungen werden hier angezeigt. (Demo)');
+        }
+        
+        // Load orders from database
+        function loadOrders() {
+            database.ref('orders').on('value', snapshot => {
+                orders = [];
+                snapshot.forEach(childSnapshot => {
+                    orders.push(childSnapshot.val());
+                });
+                
+                // Update relevant dashboards
+                if (currentRole === 'maker') updateMakerDashboard();
+                if (currentRole === 'owner' || currentRole === 'admin') updateOwnerDashboard();
+            });
+        }
+        
+        // Load users from database
+        function loadUsers() {
+            database.ref('users').once('value')
+                .then(snapshot => {
+                    users = [];
+                    snapshot.forEach(childSnapshot => {
+                        users.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    });
                     
-                    // Format timestamp
-                    const orderDate = new Date(order.timestamp);
-                    const timeString = orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-800">${order.id}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-700">
-                            ${order.items.slice(0, 2).map(item => item.name).join(', ')}${order.items.length > 2 ? '...' : ''}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-700">Station ${order.station}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span
+                    // Update waiters and makers lists
+                    updateUserLists();
+                });
+        }
+        
+        function updateUserLists() {
+            const waiters = users.filter(user => user.role === 'waiter');
+            const makers = users.filter(user => user.role === 'maker');
+            
+            const waitersList = document.getElementById('waitersList');
+            waitersList.innerHTML = '';
+            
+            const makersList = document.getElementById('makersList');
+            makersList.innerHTML = '';
+            
+            waiters.forEach(waiter => {
+                const waiterElement = document.createElement('div');
+                waiterElement.className = 'flex justify-between items-center p-2 bg-white rounded mb-1';
+                waiterElement.innerHTML = `
+                    <span>${waiter.name}</span>
+                    <button onclick="deleteUser('${waiter.id}')" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                waitersList.appendChild(waiterElement);
+            });
+            
+            makers.forEach(maker => {
+                const makerElement = document.createElement('div');
+                makerElement.className = 'flex justify-between items-center p-2 bg-white rounded mb-1';
+                makerElement.innerHTML = `
+                    <span>${maker.name} (Station ${maker.station || 'N/A'})</span>
+                    <button onclick="deleteUser('${maker.id}')" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                makersList.appendChild(makerElement);
+            });
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('Sind Sie sicher, dass Sie diesen Benutzer löschen möchten?')) {
+                // Delete from authentication
+                auth.getUser(userId)
+                    .then(() => {
+                        return auth.deleteUser(userId);
+                    })
+                    .then(() => {
+                        // Delete from database
+                        return database.ref('users/' + userId).remove();
+                    })
+                    .then(() => {
+                        alert('Benutzer erfolgreich gelöscht.');
+                        loadUsers(); // Refresh list
+                    })
+                    .catch(error => {
+                        alert('Fehler beim Löschen des Benutzers: ' + error.message);
+                    });
+            }
+        }
+    </script>
+</body>
 </html>

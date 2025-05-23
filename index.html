@@ -1,1587 +1,1267 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxury Crêpe Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
-
-        :root {
-            --primary-color: #2c5e50;
-            --secondary-color: #6b8c7d;
-            --accent-color: #d4af37;
-            --light-color: #f5f5f0;
-        }
-
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: var(--light-color);
-            color: #333;
-        }
-
-        .luxury-font {
-            font-family: 'Playfair Display', serif;
-        }
-
-        .luxury-bg {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        }
-
-        .luxury-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-luxury {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(44, 94, 80, 0.3);
-        }
-
-            .btn-luxury:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(44, 94, 80, 0.4);
-            }
-
-            .btn-luxury:active {
-                transform: translateY(0);
-            }
-
-        .btn-accent {
-            background: var(--accent-color);
-            color: #333;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-        }
-
-            .btn-accent:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-            }
-
-        .crepe-3d {
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease;
-        }
-
-            .crepe-3d:hover {
-                transform: rotateY(10deg) rotateX(5deg) translateY(-5px);
-            }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .floating {
-            animation: floating 6s ease-in-out infinite;
-        }
-
-        @keyframes floating {
-            0% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-15px);
-            }
-
-            100% {
-                transform: translateY(0px);
-            }
-        }
-
-        .order-card {
-            transition: all 0.3s ease;
-        }
-
-            .order-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--secondary-color);
-            border-radius: 10px;
-        }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: var(--primary-color);
-            }
-
-        /* Chart container */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-
-        /* Loading spinner */
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
-</head>
-<body class="min-h-screen">
-    <!-- Firebase Configuration -->
-    <script>
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDEXAMPLEEXAMPLEEXAMPLE",
-            authDomain: "your-project-id.firebaseapp.com",
-            databaseURL: "https://your-project-id.firebaseio.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project-id.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef1234567890abcdef"
-        };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const auth = firebase.auth();
-
-        // Global variables
-        let currentUser = null;
-        let currentRole = null;
-        let orders = [];
-        let users = [];
-        let menuItems = [
-            { id: 1, name: "Classic Crêpe", price: 5.50, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Sugar"] },
-            { id: 2, name: "Chocolate Dream", price: 7.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Chocolate", "Whipped Cream"] },
-            { id: 3, name: "Berry Bliss", price: 8.50, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Mixed Berries", "Powdered Sugar"] },
-            { id: 4, name: "Savory Delight", price: 9.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Ham", "Cheese", "Mushrooms"] },
-            { id: 5, name: "Nutella Supreme", price: 8.00, ingredients: ["Flour", "Eggs", "Milk", "Butter", "Nutella", "Banana", "Almonds"] }
-        ];
-
-        // Custom ingredients for custom crêpes
-        const customIngredients = [
-            { name: "Chocolate", price: 1.50 },
-            { name: "Strawberries", price: 2.00 },
-            { name: "Banana", price: 1.00 },
-            { name: "Nutella", price: 1.80 },
-            { name: "Whipped Cream", price: 1.20 },
-            { name: "Caramel", price: 1.50 },
-            { name: "Almonds", price: 1.20 },
-            { name: "Cheese", price: 1.50 },
-            { name: "Ham", price: 2.50 },
-            { name: "Mushrooms", price: 1.80 }
-        ];
-    </script>
-
-    <!-- Main Container -->
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-12">
-            <div class="flex items-center">
-                <div class="w-16 h-16 rounded-full luxury-bg flex items-center justify-center text-white text-2xl luxury-font mr-4 floating">
-                    <i class="fas fa-pancakes"></i>
-                </div>
-                <h1 class="text-3xl md:text-4xl font-bold luxury-font text-gray-800">Luxury Crêpe</h1>
-            </div>
-
-            <!-- Three-dot menu -->
-            <div class="relative">
-                <button id="menuBtn" class="w-12 h-12 rounded-full luxury-bg flex items-center justify-center text-white text-xl hover:bg-opacity-90 transition-all">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-
-                <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 py-1 luxury-card">
-                    <a href="#" id="customerBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Kundenbereich</a>
-                    <a href="#" id="loginBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Anmelden</a>
-                    <div id="logoutBtnContainer" class="hidden">
-                        <a href="#" id="logoutBtn" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Abmelden</a>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main>
-            <!-- Customer Section (Default View) -->
-            <section id="customerSection" class="mb-16">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl luxury-font font-bold text-gray-800 mb-4">Ihre Bestellung verfolgen</h2>
-                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Geben Sie Ihre Bestellnummer ein, um den Status Ihrer Crêpe-Bestellung zu sehen.</p>
-                </div>
-
-                <div class="flex justify-center">
-                    <div class="w-full max-w-md luxury-card p-8">
-                        <div class="mb-8 text-center">
-                            <div class="w-32 h-32 mx-auto mb-6 flex items-center justify-center luxury-bg rounded-full text-white text-6xl crepe-3d">
-                                <i class="fas fa-receipt"></i>
-                            </div>
-                            <h3 class="text-2xl luxury-font font-semibold text-gray-800">Bestellnummer eingeben</h3>
-                        </div>
-
-                        <div class="mb-6">
-                            <label for="orderNumber" class="block text-gray-700 mb-2">Ihre Bestellnummer</label>
-                            <input type="text" id="orderNumber" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="z.B. CR12345">
-                        </div>
-
-                        <button id="checkOrderBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
-                            Bestellung prüfen
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Order Status Display (Hidden by default) -->
-                <div id="orderStatusContainer" class="hidden mt-12">
-                    <div class="luxury-card p-8 max-w-2xl mx-auto">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-2xl luxury-font font-semibold text-gray-800">Ihre Bestellung <span id="displayOrderNumber" class="text-green-700"></span></h3>
-                            <span id="orderStatusBadge" class="px-4 py-1 rounded-full text-sm font-semibold"></span>
-                        </div>
-
-                        <div class="mb-8">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-600">Position in der Warteschlange:</span>
-                                <span id="queuePosition" class="font-semibold">-</span>
-                            </div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-600">Geschätzte Wartezeit:</span>
-                                <span id="waitTime" class="font-semibold">-</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Bestellzeitpunkt:</span>
-                                <span id="orderTime" class="font-semibold">-</span>
-                            </div>
-                        </div>
-
-                        <div id="orderItemsContainer" class="mb-8">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-4">Ihre Bestellungen:</h4>
-                            <div id="orderItemsList" class="space-y-4">
-                                <!-- Order items will be added here dynamically -->
-                            </div>
-                        </div>
-
-                        <div id="readyNotification" class="hidden p-4 bg-green-100 border-l-4 border-green-500 text-green-700 mb-6">
-                            <div class="flex items-center">
-                                <i class="fas fa-bell mr-2"></i>
-                                <p>Ihre Bestellung ist fertig! Bitte kommen Sie zum Crêpe-Stand.</p>
-                            </div>
-                        </div>
-
-                        <div id="almostReadyNotification" class="hidden p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 mb-6">
-                            <div class="flex items-center">
-                                <i class="fas fa-clock mr-2"></i>
-                                <p>Ihre Bestellung wird in ca. 5 Minuten fertig sein. Bitte machen Sie sich bereit.</p>
-                            </div>
-                        </div>
-
-                        <div class="text-center">
-                            <button id="newOrderCheckBtn" class="btn-luxury py-2 px-6 rounded-lg font-semibold transition-all">
-                                Neue Bestellung prüfen
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3D Animation Elements -->
-                <div class="hidden md:block fixed bottom-0 left-0 w-32 h-32 opacity-20">
-                    <div class="crepe-3d floating" style="animation-duration: 8s;">
-                        <i class="fas fa-stroopwafel text-8xl text-green-700"></i>
-                    </div>
-                </div>
-                <div class="hidden md:block fixed top-1/4 right-0 w-32 h-32 opacity-20">
-                    <div class="crepe-3d floating" style="animation-duration: 7s; animation-delay: 1s;">
-                        <i class="fas fa-utensils text-8xl text-green-700"></i>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Login Modal -->
-            <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div class="luxury-card p-8 w-full max-w-md">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl luxury-font font-semibold text-gray-800">Anmelden</h3>
-                        <button id="closeLoginModalBtn" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="loginRole" class="block text-gray-700 mb-2">Rolle</label>
-                        <select id="loginRole" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent">
-                            <option value="owner">Besitzer</option>
-                            <option value="maker">Hersteller</option>
-                            <option value="waiter">Kellner</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="loginUsername" class="block text-gray-700 mb-2">Benutzername</label>
-                        <input type="text" id="loginUsername" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="Ihr Benutzername">
-                    </div>
-
-                    <div class="mb-8">
-                        <label for="loginPassword" class="block text-gray-700 mb-2">Passwort</label>
-                        <input type="password" id="loginPassword" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" placeholder="Ihr Passwort">
-                    </div>
-
-                    <button id="submitLoginBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all mb-4">
-                        Anmelden
-                    </button>
-
-                    <div id="loginError" class="hidden p-3 bg-red-100 border-l-4 border-red-500 text-red-700 mt-4">
-                        <p id="loginErrorMessage"></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Maker Section -->
-            <section id="makerSection" class="hidden mb-16">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl luxury-font font-bold text-gray-800">Hersteller Bereich</h2>
-                    <div id="makerStationInfo" class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-semibold">
-                        Station: <span id="currentStation">-</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <button data-station="1" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-1"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 1</h3>
-                        <p class="text-gray-600">Wählen Sie diese Station</p>
-                    </button>
-                    <button data-station="2" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-2"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 2</h3>
-                        <p class="text-gray-600">Wählen Sie diese Station</p>
-                    </button>
-                    <button data-station="3" class="station-btn luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-3"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Station 3</h3>
-                        <p class="text-gray-600">Wählen Sie diese Station</p>
-                    </button>
-                </div>
-
-                <div id="currentOrderContainer" class="hidden luxury-card p-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl luxury-font font-semibold">Aktuelle Bestellung</h3>
-                        <div class="flex space-x-2">
-                            <button id="completeOrderBtn" class="btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
-                                Fertigstellen
-                            </button>
-                            <button id="skipOrderBtn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg text-sm font-semibold hover:bg-gray-300">
-                                Überspringen
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-600">Bestellnummer:</span>
-                            <span id="makerOrderNumber" class="font-semibold">-</span>
-                        </div>
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-600">Zeitpunkt:</span>
-                            <span id="makerOrderTime" class="font-semibold">-</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Bestellte Crêpes:</h4>
-                        <div id="makerOrderItems" class="space-y-4">
-                            <!-- Order items will be added here dynamically -->
-                        </div>
-                    </div>
-                </div>
-
-                <div id="noOrderContainer" class="luxury-card p-8 text-center">
-                    <div class="w-24 h-24 mx-auto mb-6 luxury-bg rounded-full flex items-center justify-center text-white text-4xl">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <h3 class="text-xl luxury-font font-semibold mb-2">Keine aktuellen Bestellungen</h3>
-                    <p class="text-gray-600">Es gibt momentan keine Bestellungen in Ihrer Warteschlange.</p>
-                </div>
-            </section>
-
-            <!-- Waiter Section -->
-            <section id="waiterSection" class="hidden mb-16">
-                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Kellner Bereich</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="luxury-card p-6">
-                        <h3 class="text-xl luxury-font font-semibold mb-4">Neue Bestellung</h3>
-
-                        <div class="mb-6">
-                            <label class="block text-gray-700 mb-2">Menüauswahl</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button data-item="1" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-pancakes"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Classic Crêpe</h4>
-                                    <p class="text-sm text-gray-600">€5.50</p>
-                                </button>
-                                <button data-item="2" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-candy"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Chocolate Dream</h4>
-                                    <p class="text-sm text-gray-600">€7.00</p>
-                                </button>
-                                <button data-item="3" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-berry"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Berry Bliss</h4>
-                                    <p class="text-sm text-gray-600">€8.50</p>
-                                </button>
-                                <button data-item="4" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-cheese"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Savory Delight</h4>
-                                    <p class="text-sm text-gray-600">€9.00</p>
-                                </button>
-                                <button data-item="5" class="menu-item-btn luxury-card p-4 text-center hover:shadow-md transition-all">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-jar"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Nutella Supreme</h4>
-                                    <p class="text-sm text-gray-600">€8.00</p>
-                                </button>
-                                <button id="customCrepeBtn" class="luxury-card p-4 text-center hover:shadow-md transition-all bg-yellow-50 border border-yellow-200">
-                                    <div class="text-green-700 text-2xl mb-2">
-                                        <i class="fas fa-plus-circle"></i>
-                                    </div>
-                                    <h4 class="font-semibold">Custom Crêpe</h4>
-                                    <p class="text-sm text-gray-600">Eigene Kreation</p>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Custom Crepe Form (Hidden by default) -->
-                        <div id="customCrepeForm" class="hidden mb-6 luxury-card p-4">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-semibold">Eigene Crêpe-Kreation</h4>
-                                <button id="closeCustomCrepeBtn" class="text-gray-500 hover:text-gray-700">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 mb-2">Zutaten auswählen</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <!-- Ingredients will be added dynamically -->
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 mb-2">Spezielle Anweisungen</label>
-                                <textarea id="customCrepeNotes" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" rows="2" placeholder="Besondere Wünsche..."></textarea>
-                            </div>
-
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm text-gray-600">Gesamtpreis:</p>
-                                    <p class="text-lg font-semibold">€<span id="customCrepePrice">0.00</span></p>
-                                </div>
-                                <button id="addCustomCrepeBtn" class="btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
-                                    Hinzufügen
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-gray-700 mb-2">Aktuelle Bestellung</label>
-                            <div id="currentOrderItems" class="space-y-3 mb-4 max-h-48 overflow-y-auto p-2">
-                                <!-- Selected items will be added here -->
-                                <p class="text-gray-500 text-center py-4">Noch keine Artikel ausgewählt</p>
-                            </div>
-
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-gray-700">Gesamtbetrag:</span>
-                                <span id="orderTotal" class="text-xl font-bold">€0.00</span>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="customerNotes" class="block text-gray-700 mb-2">Kundennotizen</label>
-                            <textarea id="customerNotes" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent" rows="2" placeholder="Besondere Wünsche des Kunden..."></textarea>
-                        </div>
-
-                        <button id="submitOrderBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
-                            Bestellung aufgeben
-                        </button>
-                    </div>
-
-                    <div class="luxury-card p-6">
-                        <h3 class="text-xl luxury-font font-semibold mb-4">Bestellstatus</h3>
-
-                        <div class="mb-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-semibold">Aktive Bestellungen</h4>
-                                <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
-                                    <span id="activeOrdersCount">0</span> aktiv
-                                </div>
-                            </div>
-
-                            <div id="activeOrdersList" class="space-y-3 max-h-96 overflow-y-auto">
-                                <!-- Active orders will be added here -->
-                                <p class="text-gray-500 text-center py-8">Keine aktiven Bestellungen</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Owner Section -->
-            <section id="ownerSection" class="hidden mb-16">
-                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Besitzer Bereich</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    <div class="luxury-card p-6">
-                        <h3 class="text-xl luxury-font font-semibold mb-4">Benutzerverwaltung</h3>
-
-                        <div class="mb-6">
-                            <label class="block text-gray-700 mb-2">Neuen Benutzer hinzufügen</label>
-
-                            <div class="mb-4">
-                                <label for="newUserRole" class="block text-gray-700 mb-1 text-sm">Rolle</label>
-                                <select id="newUserRole" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm">
-                                    <option value="waiter">Kellner</option>
-                                    <option value="maker">Hersteller</option>
-                                    <option value="owner">Besitzer</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="newUsername" class="block text-gray-700 mb-1 text-sm">Benutzername</label>
-                                <input type="text" id="newUsername" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm" placeholder="Benutzername">
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="newUserPassword" class="block text-gray-700 mb-1 text-sm">Passwort</label>
-                                <input type="password" id="newUserPassword" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-transparent text-sm" placeholder="Passwort">
-                            </div>
-
-                            <button id="addUserBtn" class="w-full btn-luxury py-2 px-4 rounded-lg text-sm font-semibold">
-                                Benutzer hinzufügen
-                            </button>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 mb-2">Benutzerliste</label>
-                            <div id="usersList" class="space-y-2 max-h-64 overflow-y-auto">
-                                <!-- Users will be added here dynamically -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="luxury-card p-6">
-                        <h3 class="text-xl luxury-font font-semibold mb-4">Bestellstatistiken</h3>
-
-                        <div class="mb-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-semibold">Heutige Verkäufe</h4>
-                                <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
-                                    <span id="todayOrdersCount">0</span> Bestellungen
-                                </div>
-                            </div>
-
-                            <div class="chart-container">
-                                <canvas id="todaySalesChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-sm text-gray-600">Gesamtumsatz heute:</p>
-                                <p class="text-xl font-bold">€<span id="todayRevenue">0.00</span></p>
-                            </div>
-                            <button id="refreshStatsBtn" class="bg-gray-200 text-gray-800 py-1 px-3 rounded-lg text-sm font-semibold hover:bg-gray-300 flex items-center">
-                                <i class="fas fa-sync-alt mr-1"></i> Aktualisieren
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="luxury-card p-6">
-                        <h3 class="text-xl luxury-font font-semibold mb-4">Menüverwaltung</h3>
-
-                        <div class="mb-6">
-                            <label class="block text-gray-700 mb-2">Menüartikel</label>
-                            <div id="menuItemsList" class="space-y-3 max-h-64 overflow-y-auto">
-                                <!-- Menu items will be added here dynamically -->
-                            </div>
-                        </div>
-
-                        <button id="addMenuItemBtn" class="w-full btn-accent py-2 px-4 rounded-lg text-sm font-semibold">
-                            Artikel hinzufügen
-                        </button>
-                    </div>
-                </div>
-
-                <div class="luxury-card p-6">
-                    <h3 class="text-xl luxury-font font-semibold mb-4">Aktuelle Bestellungen</h3>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-left border-b border-gray-200">
-                                    <th class="pb-2">Bestellnummer</th>
-                                    <th class="pb-2">Zeitpunkt</th>
-                                    <th class="pb-2">Status</th>
-                                    <th class="pb-2">Artikel</th>
-                                    <th class="pb-2">Gesamt</th>
-                                    <th class="pb-2">Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ownerOrdersList">
-                                <!-- Orders will be added here dynamically -->
-                                <tr>
-                                    <td colspan="6" class="py-8 text-center text-gray-500">Keine aktuellen Bestellungen</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Admin Section -->
-            <section id="adminSection" class="hidden mb-16">
-                <h2 class="text-3xl luxury-font font-bold text-gray-800 mb-8">Admin Bereich</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <a href="#" id="adminCustomerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Kundenbereich</h3>
-                        <p class="text-sm text-gray-600">Bestellstatus prüfen</p>
-                    </a>
-                    <a href="#" id="adminMakerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Hersteller</h3>
-                        <p class="text-sm text-gray-600">Bestellungen zubereiten</p>
-                    </a>
-                    <a href="#" id="adminWaiterBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-concierge-bell"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Kellner</h3>
-                        <p class="text-sm text-gray-600">Bestellungen aufnehmen</p>
-                    </a>
-                    <a href="#" id="adminOwnerBtn" class="luxury-card p-6 text-center hover:shadow-lg transition-all">
-                        <div class="w-16 h-16 mx-auto mb-4 luxury-bg rounded-full flex items-center justify-center text-white text-2xl">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3 class="text-xl luxury-font font-semibold mb-2">Besitzer</h3>
-                        <p class="text-sm text-gray-600">Statistiken & Verwaltung</p>
-                    </a>
-                </div>
-
-                <div class="luxury-card p-6">
-                    <h3 class="text-xl luxury-font font-semibold mb-4">Systeminformationen</h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <h4 class="font-semibold mb-2">Benutzerstatistiken</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Aktive Benutzer:</span>
-                                    <span id="activeUsersCount" class="font-semibold">0</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Kellner:</span>
-                                    <span id="waitersCount" class="font-semibold">0</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Hersteller:</span>
-                                    <span id="makersCount" class="font-semibold">0</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="font-semibold mb-2">Bestellstatistiken</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Heutige Bestellungen:</span>
-                                    <span id="todayOrdersAdminCount" class="font-semibold">0</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Wartende Bestellungen:</span>
-                                    <span id="pendingOrdersCount" class="font-semibold">0</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Fertige Bestellungen:</span>
-                                    <span id="completedOrdersCount" class="font-semibold">0</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="font-semibold mb-2">Systemstatus</h4>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Datenbank:</span>
-                                    <span class="text-green-600 font-semibold">Verbunden</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Letzte Aktualisierung:</span>
-                                    <span id="lastUpdateTime" class="font-semibold">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Version:</span>
-                                    <span class="font-semibold">1.0.0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Order Confirmation Modal -->
-            <div id="orderConfirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div class="luxury-card p-8 w-full max-w-md text-center">
-                    <div class="w-24 h-24 mx-auto mb-6 luxury-bg rounded-full flex items-center justify-center text-white text-4xl pulse">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <h3 class="text-2xl luxury-font font-semibold mb-4">Bestellung erfolgreich!</h3>
-                    <p class="text-gray-600 mb-6">Die Bestellung wurde erfolgreich aufgegeben.</p>
-                    <div class="bg-gray-100 p-4 rounded-lg mb-6">
-                        <p class="text-sm text-gray-600 mb-1">Bitte notieren Sie die Bestellnummer:</p>
-                        <p id="confirmationOrderNumber" class="text-3xl font-bold text-green-700">CR12345</p>
-                    </div>
-                    <button id="closeConfirmationModalBtn" class="w-full btn-luxury py-3 px-6 rounded-lg text-lg font-semibold transition-all">
-                        Fertig
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loading Overlay -->
-            <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="luxury-card p-8 flex flex-col items-center">
-                    <div class="spinner mb-4"></div>
-                    <p class="text-gray-700">Laden...</p>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Footer -->
-    <footer class="luxury-bg text-white py-8">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">
-                    <h2 class="text-2xl luxury-font font-bold">Luxury Crêpe</h2>
-                    <p class="text-sm opacity-80">Premium Crêpes mit Liebe zubereitet</p>
-                </div>
-                <div class="flex space-x-4">
-                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-10 flex items-center justify-center hover:bg-opacity-20 transition-all">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="border-t border-white border-opacity-20 mt-6 pt-6 text-sm text-center md:text-left opacity-80">
-                <p>&copy; 2023 Luxury Crêpe. Alle Rechte vorbehalten.</p>
-            </div>
+import React, { useState, useEffect } from 'react';
+
+const App = () => {
+  // State management
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentView, setCurrentView] = useState('customer');
+  const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [notification, setNotification] = useState(null);
+  
+  // Mock data for orders
+  const mockOrders = [
+    { id: 1, status: 'queued', customerName: 'Anna Müller', estimatedTime: 15, items: ['Classic Nutella', 'Banana'], station: 1 },
+    { id: 2, status: 'queued', customerName: 'Lars Schmidt', estimatedTime: 12, items: ['Savory Ham & Cheese'], station: 2 },
+    { id: 3, status: 'in-progress', customerName: 'Sophie Becker', estimatedTime: 5, items: ['Berry Delight'], station: 3 },
+    { id: 4, status: 'ready', customerName: 'Max Weber', estimatedTime: 0, items: ['Green Tea Matcha'], station: 1 },
+  ];
+  
+  // Mock data for users
+  const mockUsers = [
+    { id: 1, name: 'John Doe', role: 'owner', email: 'owner@example.com' },
+    { id: 2, name: 'Jane Smith', role: 'waiter', email: 'waiter@example.com' },
+    { id: 3, name: 'Mike Johnson', role: 'maker', email: 'maker@example.com' },
+    { id: 4, name: 'Sarah Williams', role: 'admin', email: 'admin@example.com' },
+  ];
+  
+  // Predefined crêpe creations
+  const predefinedCrêpes = [
+    { id: 1, name: 'Classic Nutella', ingredients: ['Nutella', 'Schokostreusel', 'Schlagsahne'], price: 4.50 },
+    { id: 2, name: 'Savory Ham & Cheese', ingredients: ['Schinken', 'Käse', 'Tomatensauce'], price: 5.00 },
+    { id: 3, name: 'Berry Delight', ingredients: ['Himbeeren', 'Blaue Beeren', 'Joghurt'], price: 4.80 },
+    { id: 4, name: 'Green Tea Matcha', ingredients: ['Matcha-Pulver', 'Eis', 'Milch'], price: 4.20 },
+    { id: 5, name: 'Tropical Dream', ingredients: ['Mango', 'Ananas', 'Kokosraspeln'], price: 4.70 },
+  ];
+  
+  // Available ingredients for custom crêpe
+  const availableIngredients = ['Nutella', 'Schokostreusel', 'Schlagsahne', 'Schinken', 'Käse', 'Tomatensauce', 
+                                'Himbeeren', 'Blaue Beeren', 'Joghurt', 'Matcha-Pulver', 'Eis', 'Milch', 
+                                'Mango', 'Ananas', 'Kokosraspeln'];
+  
+  // Login function
+  const handleLogin = (role, password) => {
+    // In a real app, this would authenticate against Firebase
+    // Here we simulate a successful login with a simple check
+    if (password === 'password123') {
+      const user = mockUsers.find(u => u.role === role);
+      if (user) {
+        setCurrentUser(user);
+        setCurrentView(role);
+        showNotification(`Willkommen, ${user.name}!`, 'success');
+      } else {
+        showNotification('Login fehlgeschlagen', 'error');
+      }
+    } else {
+      showNotification('Falsches Passwort', 'error');
+    }
+  };
+  
+  // Logout function
+  const handleLogout = () => {
+    showNotification(`Erfolgreich ausgeloggt`, 'success');
+    setCurrentUser(null);
+    setCurrentView('customer');
+  };
+  
+  // Show notification
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+  
+  // Add new order
+  const addOrder = (order) => {
+    const newOrder = {
+      ...order,
+      id: orders.length + 1,
+      status: 'queued',
+      createdAt: new Date().toISOString(),
+      station: Math.floor(Math.random() * 3) + 1 // Random station assignment
+    };
+    setOrders([...orders, newOrder]);
+    showNotification(`Bestellung #${newOrder.id} wurde hinzugefügt`, 'success');
+  };
+  
+  // Update order status
+  const updateOrderStatus = (orderId, newStatus) => {
+    const updatedOrders = orders.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    );
+    setOrders(updatedOrders);
+    showNotification(`Bestellung #${orderId} wurde als "${newStatus}" markiert`, 'success');
+  };
+  
+  // Calculate statistics
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.price || 0), 0);
+  const ordersToday = orders.filter(order => {
+    const today = new Date();
+    const orderDate = new Date(order.createdAt);
+    return orderDate.toDateString() === today.toDateString();
+  }).length;
+  const averageWaitTime = orders.reduce((sum, order) => sum + (order.estimatedTime || 0), 0) / orders.length || 0;
+  
+  // Render different views based on currentView state
+  const renderView = () => {
+    switch(currentView) {
+      case 'customer':
+        return <CustomerView orders={orders} showNotification={showNotification} />;
+      case 'waiter':
+        return <WaiterView 
+                 onAddOrder={addOrder} 
+                 predefinedCrêpes={predefinedCrêpes} 
+                 availableIngredients={availableIngredients}
+                 showNotification={showNotification}
+               />;
+      case 'maker':
+        return <MakerView 
+                 orders={orders} 
+                 onUpdateStatus={updateOrderStatus} 
+                 selectedOrder={selectedOrder} 
+                 onSelectOrder={setSelectedOrder}
+                 showNotification={showNotification}
+               />;
+      case 'owner':
+        return <OwnerView 
+                 orders={orders} 
+                 users={mockUsers} 
+                 totalRevenue={totalRevenue} 
+                 ordersToday={ordersToday} 
+                 averageWaitTime={averageWaitTime}
+                 showNotification={showNotification}
+               />;
+      case 'admin':
+        return <AdminView 
+                 orders={orders} 
+                 users={mockUsers} 
+                 totalRevenue={totalRevenue} 
+                 ordersToday={ordersToday} 
+                 averageWaitTime={averageWaitTime}
+                 predefinedCrêpes={predefinedCrêpes}
+                 showNotification={showNotification}
+               />;
+      case 'login':
+        return <LoginView onLogin={handleLogin} onBack={() => setCurrentView(currentUser ? currentView : 'customer')} />;
+      default:
+        return <CustomerView orders={orders} showNotification={showNotification} />;
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Notification */}
+      {notification && (
+        <div 
+          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+            notification.type === 'success' 
+              ? 'bg-emerald-600 text-white' 
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {notification.message}
         </div>
-    </footer>
+      )}
+      
+      {/* Header */}
+      <header className="bg-emerald-800 text-white p-4 shadow-md">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Crêpe Master</h1>
+          
+          {/* Navigation */}
+          <nav>
+            <ul className="flex space-x-4">
+              <li><button onClick={() => setCurrentView('customer')} className={`px-3 py-2 rounded-md ${currentView === 'customer' ? 'bg-emerald-700' : 'hover:bg-emerald-700'}`}>Kunde</button></li>
+              {currentUser && (
+                <>
+                  <li><button onClick={() => setCurrentView('waiter')} className={`px-3 py-2 rounded-md ${currentView === 'waiter' ? 'bg-emerald-700' : 'hover:bg-emerald-700'}`}>Kassierer</button></li>
+                  <li><button onClick={() => setCurrentView('maker')} className={`px-3 py-2 rounded-md ${currentView === 'maker' ? 'bg-emerald-700' : 'hover:bg-emerald-700'}`}>Hersteller</button></li>
+                  <li><button onClick={() => setCurrentView('owner')} className={`px-3 py-2 rounded-md ${currentView === 'owner' ? 'bg-emerald-700' : 'hover:bg-emerald-700'}`}>Owner</button></li>
+                  <li><button onClick={() => setCurrentView('admin')} className={`px-3 py-2 rounded-md ${currentView === 'admin' ? 'bg-emerald-700' : 'hover:bg-emerald-700'}`}>Admin</button></li>
+                </>
+              )}
+            </ul>
+          </nav>
+          
+          {/* User menu */}
+          <div className="relative">
+            {currentUser ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm">{currentUser.name}</span>
+                <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors">Logout</button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setCurrentView('login')} 
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors"
+              >
+                Login
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+      
+      {/* Main content */}
+      <main className="container mx-auto py-8">
+        {renderView()}
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-emerald-800 text-white p-4 mt-12">
+        <div className="container mx-auto text-center">
+          <p>&copy; 2023 Crêpe Master. Alle Rechte vorbehalten.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Main JavaScript -->
-    <script>
-        // DOM Elements
-        const menuBtn = document.getElementById('menuBtn');
-        const menuDropdown = document.getElementById('menuDropdown');
-        const customerBtn = document.getElementById('customerBtn');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const logoutBtnContainer = document.getElementById('logoutBtnContainer');
-        const loginModal = document.getElementById('loginModal');
-        const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
-        const submitLoginBtn = document.getElementById('submitLoginBtn');
-        const loginError = document.getElementById('loginError');
-        const loginErrorMessage = document.getElementById('loginErrorMessage');
-        const loginRole = document.getElementById('loginRole');
-        const loginUsername = document.getElementById('loginUsername');
-        const loginPassword = document.getElementById('loginPassword');
-
-        const customerSection = document.getElementById('customerSection');
-        const makerSection = document.getElementById('makerSection');
-        const waiterSection = document.getElementById('waiterSection');
-        const ownerSection = document.getElementById('ownerSection');
-        const adminSection = document.getElementById('adminSection');
-
-        const orderNumber = document.getElementById('orderNumber');
-        const checkOrderBtn = document.getElementById('checkOrderBtn');
-        const orderStatusContainer = document.getElementById('orderStatusContainer');
-        const displayOrderNumber = document.getElementById('displayOrderNumber');
-        const orderStatusBadge = document.getElementById('orderStatusBadge');
-        const queuePosition = document.getElementById('queuePosition');
-        const waitTime = document.getElementById('waitTime');
-        const orderTime = document.getElementById('orderTime');
-        const orderItemsList = document.getElementById('orderItemsList');
-        const readyNotification = document.getElementById('readyNotification');
-        const almostReadyNotification = document.getElementById('almostReadyNotification');
-        const newOrderCheckBtn = document.getElementById('newOrderCheckBtn');
-
-        const stationBtns = document.querySelectorAll('.station-btn');
-        const currentStation = document.getElementById('currentStation');
-        const currentOrderContainer = document.getElementById('currentOrderContainer');
-        const noOrderContainer = document.getElementById('noOrderContainer');
-        const makerOrderNumber = document.getElementById('makerOrderNumber');
-        const makerOrderTime = document.getElementById('makerOrderTime');
-        const makerOrderItems = document.getElementById('makerOrderItems');
-        const completeOrderBtn = document.getElementById('completeOrderBtn');
-        const skipOrderBtn = document.getElementById('skipOrderBtn');
-
-        const menuItemBtns = document.querySelectorAll('.menu-item-btn');
-        const customCrepeBtn = document.getElementById('customCrepeBtn');
-        const customCrepeForm = document.getElementById('customCrepeForm');
-        const closeCustomCrepeBtn = document.getElementById('closeCustomCrepeBtn');
-        const customCrepePrice = document.getElementById('customCrepePrice');
-        const addCustomCrepeBtn = document.getElementById('addCustomCrepeBtn');
-        const customCrepeNotes = document.getElementById('customCrepeNotes');
-        const currentOrderItems = document.getElementById('currentOrderItems');
-        const orderTotal = document.getElementById('orderTotal');
-        const customerNotes = document.getElementById('customerNotes');
-        const submitOrderBtn = document.getElementById('submitOrderBtn');
-        const activeOrdersCount = document.getElementById('activeOrdersCount');
-        const activeOrdersList = document.getElementById('activeOrdersList');
-
-        const newUserRole = document.getElementById('newUserRole');
-        const newUsername = document.getElementById('newUsername');
-        const newUserPassword = document.getElementById('newUserPassword');
-        const addUserBtn = document.getElementById('addUserBtn');
-        const usersList = document.getElementById('usersList');
-        const todayOrdersCount = document.getElementById('todayOrdersCount');
-        const todayRevenue = document.getElementById('todayRevenue');
-        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
-        const menuItemsList = document.getElementById('menuItemsList');
-        const ownerOrdersList = document.getElementById('ownerOrdersList');
-        const todaySalesChart = document.getElementById('todaySalesChart');
-
-        const adminCustomerBtn = document.getElementById('adminCustomerBtn');
-        const adminMakerBtn = document.getElementById('adminMakerBtn');
-        const adminWaiterBtn = document.getElementById('adminWaiterBtn');
-        const adminOwnerBtn = document.getElementById('adminOwnerBtn');
-        const activeUsersCount = document.getElementById('activeUsersCount');
-        const waitersCount = document.getElementById('waitersCount');
-        const makersCount = document.getElementById('makersCount');
-        const todayOrdersAdminCount = document.getElementById('todayOrdersAdminCount');
-        const pendingOrdersCount = document.getElementById('pendingOrdersCount');
-        const completedOrdersCount = document.getElementById('completedOrdersCount');
-        const lastUpdateTime = document.getElementById('lastUpdateTime');
-
-        const orderConfirmationModal = document.getElementById('orderConfirmationModal');
-        const confirmationOrderNumber = document.getElementById('confirmationOrderNumber');
-        const closeConfirmationModalBtn = document.getElementById('closeConfirmationModalBtn');
-
-        const loadingOverlay = document.getElementById('loadingOverlay');
-
-        // Global variables
-        let selectedStation = null;
-        let currentOrder = [];
-        let customCrepeIngredients = [];
-        let chartInstance = null;
-
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase (mock functions for this example)
-            initializeFirebase();
-
-            // Set up event listeners
-            setupEventListeners();
-
-            // Show customer section by default
-            showSection('customer');
-
-            // Initialize custom crepe ingredients
-            initializeCustomCrepeIngredients();
-
-            // Check if user is already logged in (for demo purposes)
-            checkAuthState();
-        });
-
-        // Firebase initialization (mock)
-        function initializeFirebase() {
-            console.log("Firebase initialized");
-            // In a real app, this would connect to your Firebase project
+// Customer View Component
+const CustomerView = ({ orders, showNotification }) => {
+  const [orderNumber, setOrderNumber] = useState('');
+  const [waitTime, setWaitTime] = useState(null);
+  const [ordersAhead, setOrdersAhead] = useState(0);
+  const [fiveMinuteWarning, setFiveMinuteWarning] = useState(false);
+  
+  const handleCheckStatus = () => {
+    if (orderNumber && !isNaN(orderNumber)) {
+      const order = orders.find(o => o.id === parseInt(orderNumber));
+      if (order) {
+        const queuedOrders = orders.filter(o => o.status === 'queued' || o.status === 'in-progress');
+        const orderIndex = queuedOrders.findIndex(o => o.id === parseInt(orderNumber));
+        
+        if (orderIndex >= 0) {
+          setOrdersAhead(orderIndex);
+          setWaitTime(order.estimatedTime * (orderIndex + 1));
+          setFiveMinuteWarning(order.estimatedTime * (orderIndex + 1) <= 5);
+        } else {
+          setWaitTime(0);
+          setOrdersAhead(0);
+          setFiveMinuteWarning(false);
         }
-
-        // Check authentication state (mock)
-        function checkAuthState() {
-            // In a real app, this would check Firebase auth state
-            console.log("Checking auth state");
-        }
-
-        // Set up all event listeners
-        function setupEventListeners() {
-            // Menu dropdown
-            menuBtn.addEventListener('click', toggleMenuDropdown);
-            document.addEventListener('click', closeMenuDropdownOutside);
-
-            // Navigation
-            customerBtn.addEventListener('click', () => showSection('customer'));
-            loginBtn.addEventListener('click', showLoginModal);
-            logoutBtn.addEventListener('click', logoutUser);
-
-            // Customer section
-            checkOrderBtn.addEventListener('click', checkOrderStatus);
-            newOrderCheckBtn.addEventListener('click', resetOrderCheck);
-
-            // Login modal
-            closeLoginModalBtn.addEventListener('click', hideLoginModal);
-            submitLoginBtn.addEventListener('click', loginUser);
-
-            // Maker section
-            stationBtns.forEach(btn => {
-                btn.addEventListener('click', selectStation);
-            });
-            completeOrderBtn.addEventListener('click', completeOrder);
-            skipOrderBtn.addEventListener('click', skipOrder);
-
-            // Waiter section
-            menuItemBtns.forEach(btn => {
-                btn.addEventListener('click', addMenuItemToOrder);
-            });
-            customCrepeBtn.addEventListener('click', showCustomCrepeForm);
-            closeCustomCrepeBtn.addEventListener('click', hideCustomCrepeForm);
-            addCustomCrepeBtn.addEventListener('click', addCustomCrepeToOrder);
-            submitOrderBtn.addEventListener('click', submitOrder);
-
-            // Owner section
-            addUserBtn.addEventListener('click', addNewUser);
-            refreshStatsBtn.addEventListener('click', refreshStatistics);
-
-            // Admin section
-            adminCustomerBtn.addEventListener('click', () => showSection('customer'));
-            adminMakerBtn.addEventListener('click', () => showSection('maker'));
-            adminWaiterBtn.addEventListener('click', () => showSection('waiter'));
-            adminOwnerBtn.addEventListener('click', () => showSection('owner'));
-
-            // Order confirmation modal
-            closeConfirmationModalBtn.addEventListener('click', hideOrderConfirmationModal);
-        }
-
-        // Toggle menu dropdown
-        function toggleMenuDropdown(e) {
-            e.stopPropagation();
-            menuDropdown.classList.toggle('hidden');
-        }
-
-        // Close menu dropdown when clicking outside
-        function closeMenuDropdownOutside(e) {
-            if (!menuDropdown.contains(e.target) && e.target !== menuBtn) {
-                menuDropdown.classList.add('hidden');
-            }
-        }
-
-        // Show login modal
-        function showLoginModal() {
-            loginModal.classList.remove('hidden');
-            menuDropdown.classList.add('hidden');
-        }
-
-        // Hide login modal
-        function hideLoginModal() {
-            loginModal.classList.add('hidden');
-            loginError.classList.add('hidden');
-            loginUsername.value = '';
-            loginPassword.value = '';
-        }
-
-        // Login user (mock)
-        function loginUser() {
-            const role = loginRole.value;
-            const username = loginUsername.value.trim();
-            const password = loginPassword.value.trim();
-
-            if (!username || !password) {
-                showLoginError('Bitte geben Sie Benutzername und Passwort ein');
-                return;
-            }
-
-            // Mock authentication
-            showLoading();
-            setTimeout(() => {
-                hideLoading();
-
-                // For demo purposes, we'll just log in with any credentials
-                currentUser = {
-                    username: username,
-                    role: role
-                };
-
-                // Update UI
-                loginBtn.classList.add('hidden');
-                logoutBtnContainer.classList.remove('hidden');
-                hideLoginModal();
-
-                // Show appropriate section based on role
-                showSection(role);
-
-                // Load data for the section
-                loadSectionData(role);
-            }, 1000);
-        }
-
-        // Show login error
-        function showLoginError(message) {
-            loginErrorMessage.textContent = message;
-            loginError.classList.remove('hidden');
-        }
-
-        // Logout user
-        function logoutUser() {
-            currentUser = null;
-            logoutBtnContainer.classList.add('hidden');
-            loginBtn.classList.remove('hidden');
-            showSection('customer');
-        }
-
-        // Show section based on role or section name
-        function showSection(section) {
-            // Hide all sections first
-            customerSection.classList.add('hidden');
-            makerSection.classList.add('hidden');
-            waiterSection.classList.add('hidden');
-            ownerSection.classList.add('hidden');
-            adminSection.classList.add('hidden');
-
-            // Show the selected section
-            switch(section) {
-                case 'customer':
-                    customerSection.classList.remove('hidden');
-                    break;
-                case 'maker':
-                    makerSection.classList.remove('hidden');
-                    break;
-                case 'waiter':
-                    waiterSection.classList.remove('hidden');
-                    break;
-                case 'owner':
-                    ownerSection.classList.remove('hidden');
-                    break;
-                case 'admin':
-                    adminSection.classList.remove('hidden');
-                    break;
-                default:
-                    customerSection.classList.remove('hidden');
-            }
-
-            // If logged in, show appropriate section for role
-            if (currentUser) {
-                if (currentUser.role === 'admin') {
-                    adminSection.classList.remove('hidden');
-                }
-            }
-        }
-
-        // Load data for the current section
-        function loadSectionData(section) {
-            switch(section) {
-                case 'maker':
-                    loadMakerData();
-                    break;
-                case 'waiter':
-                    loadWaiterData();
-                    break;
-                case 'owner':
-                    loadOwnerData();
-                    break;
-                case 'admin':
-                    loadAdminData();
-                    break;
-            }
-        }
-
-        // Load maker data
-        function loadMakerData() {
-            // In a real app, this would fetch data from Firebase
-            console.log("Loading maker data");
-
-            // For demo, just show no orders
-            currentOrderContainer.classList.add('hidden');
-            noOrderContainer.classList.remove('hidden');
-        }
-
-        // Load waiter data
-        function loadWaiterData() {
-            // In a real app, this would fetch data from Firebase
-            console.log("Loading waiter data");
-
-            // For demo, show some mock active orders
-            updateActiveOrdersList([
-                { id: 'CR10001', time: '10:15', status: 'In Bearbeitung', items: ['Classic Crêpe', 'Chocolate Dream'], total: 12.50 },
-                { id: 'CR10002', time: '10:20', status: 'Wartend', items: ['Berry Bliss'], total: 8.50 }
-            ]);
-        }
-
-        // Load owner data
-        function loadOwnerData() {
-            // In a real app, this would fetch data from Firebase
-            console.log("Loading owner data");
-
-            // For demo, show some mock data
-            todayOrdersCount.textContent = '8';
-            todayRevenue.textContent = '64.50';
-
-            // Update users list
-            updateUsersList([
-                { username: 'admin', role: 'admin' },
-                { username: 'owner1', role: 'owner' },
-                { username: 'waiter1', role: 'waiter' },
-                { username: 'maker1', role: 'maker' },
-                { username: 'maker2', role: 'maker' }
-            ]);
-
-            // Update menu items list
-            updateMenuItemsList(menuItems);
-
-            // Update orders list
-            updateOwnerOrdersList([
-                { id: 'CR10001', time: '10:15', status: 'In Bearbeitung', items: 2, total: 12.50 },
-                { id: 'CR10002', time: '10:20', status: 'Wartend', items: 1, total: 8.50 },
-                { id: 'CR10003', time: '09:45', status: 'Abgeschlossen', items: 3, total: 21.00 }
-            ]);
-
-            // Initialize chart
-            initializeTodaySalesChart();
-        }
-
-        // Load admin data
-        function loadAdminData() {
-            // In a real app, this would fetch data from Firebase
-            console.log("Loading admin data");
-
-            // Update stats
-            activeUsersCount.textContent = '5';
-            waitersCount.textContent = '1';
-            makersCount.textContent = '2';
-            todayOrdersAdminCount.textContent = '8';
-            pendingOrdersCount.textContent = '2';
-            completedOrdersCount.textContent = '6';
-            lastUpdateTime.textContent = new Date().toLocaleTimeString();
-        }
-
-        // Check order status (customer)
-        function checkOrderStatus() {
-            const orderNum = orderNumber.value.trim();
-
-            if (!orderNum) {
-                alert('Bitte geben Sie eine Bestellnummer ein');
-                return;
-            }
-
-            // In a real app, this would check Firebase for the order
-            showLoading();
-
-            setTimeout(() => {
-                hideLoading();
-
-                // Mock response
-                const mockOrder = {
-                    id: orderNum,
-                    status: 'In Bearbeitung',
-                    queuePosition: 2,
-                    waitTime: '15 Minuten',
-                    orderTime: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    items: [
-                        { name: 'Classic Crêpe', price: 5.50 },
-                        { name: 'Chocolate Dream', price: 7.00 }
-                    ]
-                };
-
-                // Display order status
-                displayOrderStatus(mockOrder);
-            }, 1000);
-        }
-
-        // Display order status
-        function displayOrderStatus(order) {
-            displayOrderNumber.textContent = order.id;
-
-            // Set status badge
-            orderStatusBadge.textContent = order.status;
-            if (order.status === 'Fertig') {
-                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800';
-                readyNotification.classList.remove('hidden');
-                almostReadyNotification.classList.add('hidden');
-            } else if (order.status === 'In Bearbeitung') {
-                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800';
-                readyNotification.classList.add('hidden');
-
-                // Show almost ready notification if wait time is <= 5 minutes
-                if (order.waitTime.includes('5') || order.waitTime.includes('weniger')) {
-                    almostReadyNotification.classList.remove('hidden');
-                } else {
-                    almostReadyNotification.classList.add('hidden');
-                }
-            } else {
-                orderStatusBadge.className = 'px-4 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800';
-                readyNotification.classList.add('hidden');
-                almostReadyNotification.classList.add('hidden');
-            }
-
-            queuePosition.textContent = order.queuePosition;
-            waitTime.textContent = order.waitTime;
-            orderTime.textContent = order.orderTime;
-
-            // Display order items
-            orderItemsList.innerHTML = '';
-            order.items.forEach(item => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'flex justify-between items-center border-b border-gray-100 pb-2';
-                itemElement.innerHTML = `
-                    <span>${item.name}</span>
-                    <span class="font-semibold">€${item.price.toFixed(2)}</span>
-                `;
-                orderItemsList.appendChild(itemElement);
-            });
-
-            // Show the order status container
-            orderStatusContainer.classList.remove('hidden');
-
-            // Scroll to the order status
-            orderStatusContainer.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Reset order check
-        function resetOrderCheck() {
-            orderNumber.value = '';
-            orderStatusContainer.classList.add('hidden');
-            orderNumber.focus();
-        }
-
-        // Select station (maker)
-        function selectStation(e) {
-            const station = e.currentTarget.getAttribute('data-station');
-            selectedStation = station;
-
-            // Update UI
-            stationBtns.forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-green-500');
-            });
-            e.currentTarget.classList.add('ring-2', 'ring-green-500');
-
-            currentStation.textContent = station;
-
-            // In a real app, this would fetch orders for this station from Firebase
-            // For demo, we'll just show a mock order
-            showMockOrderForStation(station);
-        }
-
-        // Show mock order for station (demo)
-        function showMockOrderForStation(station) {
-            // For demo, station 1 gets an order, others get none
-            if (station === '1') {
-                currentOrderContainer.classList.remove('hidden');
-                noOrderContainer.classList.add('hidden');
-
-                makerOrderNumber.textContent = 'CR10001';
-                makerOrderTime.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                // Display order items
-                makerOrderItems.innerHTML = '';
-                const mockItems = [
-                    { name: 'Classic Crêpe', notes: 'Extra Zucker' },
-                    { name: 'Chocolate Dream', notes: 'Ohne Sahne' }
-                ];
-
-                mockItems.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'luxury-card p-3 mb-2';
-                    itemElement.innerHTML = `
-                        <div class="font-semibold">${item.name}</div>
-                        ${item.notes ? `<div class="text-sm text-gray-600 mt-1">${item.notes}</div>` : ''}
-                    `;
-                    makerOrderItems.appendChild(itemElement);
-                });
-            } else {
-                currentOrderContainer.classList.add('hidden');
-                noOrderContainer.classList.remove('hidden');
-            }
-        }
-
-        // Complete order (maker)
-        function completeOrder() {
-            // In a real app, this would update the order status in Firebase
-            showLoading();
-
-            setTimeout(() => {
-                hideLoading();
-
-                // Show confirmation
-                alert('Bestellung als fertig markiert');
-
-                // Hide current order
-                currentOrderContainer.classList.add('hidden');
-                noOrderContainer.classList.remove('hidden');
-            }, 1000);
-        }
-
-        // Skip order (maker)
-        function skipOrder() {
-            // In a real app, this would move the order to another station in Firebase
-            showLoading();
-
-            setTimeout(() => {
-                hideLoading();
-
-                // Show confirmation
-                alert('Bestellung übersprungen und an nächste Station weitergegeben');
-
-                // Hide current order
-                currentOrderContainer.classList.add('hidden');
-                noOrderContainer.classList.remove('hidden');
-            }, 1000);
-        }
-
-        // Initialize custom crepe ingredients
-        function initializeCustomCrepeIngredients() {
-            const container = customCrepeForm.querySelector('.grid.grid-cols-2.gap-2');
-            container.innerHTML = '';
-
-            customIngredients.forEach(ingredient => {
-                const ingredientElement = document.createElement('div');
-                ingredientElement.className = 'flex items-center';
-                ingredientElement.innerHTML = `
-                    <input type="checkbox" id="ing-${ingredient.name.toLowerCase()}" class="mr-2" data-name="${ingredient.name}" data-price="${ingredient.price}">
-                    <label for="ing-${ingredient.name.toLowerCase()}" class="text-sm">${ingredient.name} (+€${ingredient.price.toFixed(2)})</label>
-                `;
-                container.appendChild(ingredientElement);
-
-                // Add event listener to update price
-                const checkbox = ingredientElement.querySelector('input');
-                checkbox.addEventListener('change', updateCustomCrepePrice);
-            });
-        }
-
-        // Show custom crepe form
-        function showCustomCrepeForm() {
-            customCrepeForm.classList.remove('hidden');
-            customCrepeBtn.classList.add('hidden');
-
-            // Reset form
-            customCrepePrice.textContent = '0.00';
-            customCrepeNotes.value = '';
-
-            // Uncheck all ingredients
-            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-        }
-
-        // Hide custom crepe form
-        function hideCustomCrepeForm() {
-            customCrepeForm.classList.add('hidden');
-            customCrepeBtn.classList.remove('hidden');
-        }
-
-        // Update custom crepe price
-        function updateCustomCrepePrice() {
-            let total = 4.50; // Base price for custom crepe
-
-            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]:checked');
-            checkboxes.forEach(checkbox => {
-                total += parseFloat(checkbox.getAttribute('data-price'));
-            });
-
-            customCrepePrice.textContent = total.toFixed(2);
-        }
-
-        // Add custom crepe to order
-        function addCustomCrepeToOrder() {
-            let ingredients = [];
-            let total = 4.50; // Base price
-
-            const checkboxes = customCrepeForm.querySelectorAll('input[type="checkbox"]:checked');
-            checkboxes.forEach(checkbox => {
-                const name = checkbox.getAttribute('data-name');
-                const price = parseFloat(checkbox.getAttribute('data-price'));
-                ingredients.push(name);
-                total += price;
-            });
-
-            const notes = customCrepeNotes.value.trim();
-
-            // Add to current order
-            currentOrder.push({
-                type: 'custom',
-                name: 'Custom Crêpe',
-                price: total,
-                ingredients: ingredients,
-                notes: notes
-            });
-
-            // Update order display
-            updateCurrentOrderDisplay();
-
-            // Hide the custom crepe form
-            hideCustomCrepeForm();
-        }
-
-        // Add menu item to order
-        function addMenuItemToOrder(e) {
-            const itemId = parseInt(e.currentTarget.getAttribute('data-item'));
-            const menuItem = menuItems.find(item => item.id === itemId);
-
-            if (menuItem) {
-                currentOrder.push({
-                    type: 'menu',
-                    id: menuItem.id,
-                    name: menuItem.name,
-                    price: menuItem.price,
-                    ingredients: menuItem.ingredients
-                });
-
-                // Update order display
-                updateCurrentOrderDisplay();
-            }
-        }
-
-        // Update current order display
-        function updateCurrentOrderDisplay() {
-            if (currentOrder.length === 0) {
-                currentOrderItems.innerHTML = '<p class="text-gray-500 text-center py-4">Noch keine Artikel ausgewählt</p>';
-                orderTotal.textContent = '€0.00';
-                return;
-            }
-
-            currentOrderItems.innerHTML = '';
-            let total = 0;
-
-            currentOrder.forEach((item, index) => {
-                total += item.price;
-
-                const itemElement = document.createElement('div');
-                itemElement.className = 'flex justify-between items-center border-b border-gray-100 pb-2';
-
-                let details = '';
-                if (item.type === 'custom' && item.ingredients.length > 0) {
-                    details = `<div class="text-xs text-gray-600 mt-1">Mit: ${item.ingredients.join(', ')}</div>`;
-                }
-                if (item.notes) {
-                    details += `<div class="text-xs text-gray-600 mt-1">Notiz: ${item.notes}</div>`;
-                }
-
-                itemElement.innerHTML = `
-                    <div class="flex-1">
-                        <div class="flex justify-between">
-                            <span>${item.name}</span>
-                            <span class="font-semibold">€${item.price.toFixed(2)}</span>
-                        </div>
-                        ${details}
+      } else {
+        setWaitTime(null);
+        setOrdersAhead(0);
+        setFiveMinuteWarning(false);
+        showNotification('Bestellung nicht gefunden', 'error');
+      }
+    }
+  };
+  
+  return (
+    <div className="max-w-md mx-auto">
+      <h2 className="text-3xl font-bold text-emerald-800 mb-6 text-center">Bestellstatus prüfen</h2>
+      
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <p className="text-gray-600 mb-4">Geben Sie Ihre Bestellnummer ein, um den aktuellen Status zu erfahren:</p>
+        
+        <div className="flex">
+          <input
+            type="text"
+            value={orderNumber}
+            onChange={(e) => setOrderNumber(e.target.value)}
+            placeholder="Bestellnummer"
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <button
+            onClick={handleCheckStatus}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-r-md hover:bg-emerald-700 transition-colors"
+          >
+            Prüfen
+          </button>
+        </div>
+      </div>
+      
+      {waitTime !== null && (
+        <div className={`bg-white rounded-lg shadow-md p-6 transform transition-all duration-300 ${fiveMinuteWarning ? 'animate-pulse' : ''}`}>
+          {waitTime > 0 ? (
+            <>
+              <h3 className="text-2xl font-semibold text-emerald-700 mb-4">Ihre Bestellung ist in Bearbeitung</h3>
+              <p className="text-gray-700 mb-2">Es sind noch <span className="font-bold">{ordersAhead}</span> Bestellungen vor Ihnen.</p>
+              <p className="text-gray-700">Die geschätzte Wartezeit beträgt noch <span className="font-bold">{waitTime} Minuten</span>.</p>
+              
+              {fiveMinuteWarning && (
+                <div className="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                  <p className="font-bold">Fast fertig!</p>
+                  <p>Ihre Bestellung ist gleich bereit. Bereiten Sie sich auf den Crêpe-Stand vor!</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <h3 className="text-2xl font-semibold text-emerald-700 mb-4">Ihre Bestellung ist bereit!</h3>
+              <p className="text-gray-700">Ihre Bestellung wurde bereits fertiggestellt. Begeben Sie sich bitte zum Crêpe-Stand.</p>
+            </>
+          )}
+        </div>
+      )}
+      
+      <div className="mt-8 text-center">
+        <img src="https://picsum.photos/600/400 " alt="Crêpes" className="rounded-lg shadow-md mx-auto mb-4" />
+        <p className="text-gray-600">Genießen Sie unsere köstlichen Crêpes, frisch zubereitet!</p>
+      </div>
+    </div>
+  );
+};
+
+// Login View Component
+const LoginView = ({ onLogin, onBack }) => {
+  const [role, setRole] = useState('waiter');
+  const [password, setPassword] = useState('');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onLogin(role, password);
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md transform transition-all duration-300 animate-fade-in">
+        <h2 className="text-2xl font-bold text-emerald-800 mb-4">Login</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="role" className="block text-gray-700 mb-2">Rolle</label>
+            <select 
+              id="role" 
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="waiter">Kassierer</option>
+              <option value="maker">Hersteller</option>
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-gray-700 mb-2">Passwort</label>
+            <input 
+              type="password" 
+              id="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md" 
+              required 
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button 
+              type="button" 
+              onClick={onBack} 
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              Abbrechen
+            </button>
+            <button 
+              type="submit" 
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+            >
+              Anmelden
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Waiter View Component
+const WaiterView = ({ onAddOrder, predefinedCrêpes, availableIngredients, showNotification }) => {
+  const [step, setStep] = useState(1);
+  const [selectedCrêpe, setSelectedCrêpe] = useState(null);
+  const [customCrêpe, setCustomCrêpe] = useState({ name: '', ingredients: [], price: 0 });
+  const [customerName, setCustomerName] = useState('');
+  
+  const handleNextStep = () => {
+    setStep(step + 1);
+  };
+  
+  const handlePrevStep = () => {
+    setStep(step - 1);
+  };
+  
+  const handleSelectCrêpe = (crêpe) => {
+    setSelectedCrêpe(crêpe);
+    setStep(2);
+  };
+  
+  const handleAddIngredient = (ingredient) => {
+    if (!customCrêpe.ingredients.includes(ingredient)) {
+      setCustomCrêpe({
+        ...customCrêpe,
+        ingredients: [...customCrêpe.ingredients, ingredient],
+        price: customCrêpe.price + 0.5
+      });
+    }
+  };
+  
+  const handleRemoveIngredient = (ingredient) => {
+    setCustomCrêpe({
+      ...customCrêpe,
+      ingredients: customCrêpe.ingredients.filter(i => i !== ingredient),
+      price: customCrêpe.price - 0.5
+    });
+  };
+  
+  const handleCreateCustomCrêpe = () => {
+    setStep(2);
+  };
+  
+  const handleConfirmOrder = () => {
+    const order = {
+      customerName,
+      items: selectedCrêpe ? [selectedCrêpe.name] : [customCrêpe.name],
+      price: selectedCrêpe ? selectedCrêpe.price : customCrêpe.price,
+      estimatedTime: 10
+    };
+    
+    onAddOrder(order);
+    showNotification('Bestellung erfolgreich erfasst', 'success');
+    setStep(3);
+  };
+  
+  const handleFinishOrder = () => {
+    setStep(1);
+    setSelectedCrêpe(null);
+    setCustomCrêpe({ name: '', ingredients: [], price: 0 });
+    setCustomerName('');
+  };
+  
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold text-emerald-800 mb-6 text-center">Neue Bestellung erfassen</h2>
+      
+      {step === 1 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Wählen Sie eine Crêpe-Variante</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {predefinedCrêpes.map(crêpe => (
+              <div 
+                key={crêpe.id} 
+                className="border border-gray-200 rounded-lg p-4 hover:border-emerald-500 transition-colors cursor-pointer transform hover:scale-105 transition-transform"
+                onClick={() => handleSelectCrêpe(crêpe)}
+              >
+                <h4 className="font-bold text-lg">{crêpe.name}</h4>
+                <p className="text-sm text-gray-600">{crêpe.ingredients.join(', ')}</p>
+                <p className="text-emerald-600 font-semibold mt-2">{crêpe.price.toFixed(2)} €</p>
+              </div>
+            ))}
+          </div>
+          
+          <button 
+            onClick={handleCreateCustomCrêpe}
+            className="w-full bg-emerald-600 text-white py-3 rounded-md hover:bg-emerald-700 transition-colors transform hover:scale-105 transition-transform"
+          >
+            Individuelle Crêpe zusammenstellen
+          </button>
+        </div>
+      )}
+      
+      {step === 2 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">
+            {selectedCrêpe ? 'Bestellung bestätigen' : 'Individuelle Crêpe zusammenstellen'}
+          </h3>
+          
+          {!selectedCrêpe && (
+            <div className="mb-6">
+              <label htmlFor="customName" className="block text-gray-700 mb-2">Name für Ihre Crêpe</label>
+              <input
+                type="text"
+                id="customName"
+                value={customCrêpe.name}
+                onChange={(e) => setCustomCrêpe({...customCrêpe, name: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
+                placeholder="z.B. Meine Lieblingscrêpe"
+              />
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                {availableIngredients.map(ingredient => (
+                  <div key={ingredient} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`ingredient-${ingredient}`}
+                      checked={customCrêpe.ingredients.includes(ingredient)}
+                      onChange={() => 
+                        customCrêpe.ingredients.includes(ingredient) 
+                          ? handleRemoveIngredient(ingredient) 
+                          : handleAddIngredient(ingredient)
+                      }
+                      className="mr-2"
+                    />
+                    <label htmlFor={`ingredient-${ingredient}`}>{ingredient}</label>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-right text-lg font-semibold text-emerald-600">
+                Geschätzter Preis: {customCrêpe.price.toFixed(2)} €
+              </p>
+            </div>
+          )}
+          
+          <div className="mb-6">
+            <label htmlFor="customerName" className="block text-gray-700 mb-2">Kundenname</label>
+            <input
+              type="text"
+              id="customerName"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Vor- und Nachname"
+            />
+          </div>
+          
+          <div className="flex justify-between">
+            <button 
+              onClick={handlePrevStep}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              Zurück
+            </button>
+            <button 
+              onClick={handleConfirmOrder}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+            >
+              Bestellung bestätigen
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {step === 3 && (
+        <div className="bg-white rounded-lg shadow-md p-6 text-center animate-fade-in">
+          <h3 className="text-2xl font-semibold text-emerald-700 mb-4">Bestellung erfolgreich erfasst!</h3>
+          
+          <div className="bg-emerald-100 border-l-4 border-emerald-500 text-emerald-700 p-4 mb-6 inline-block rounded-md transform transition-transform animate-bounce">
+            <p className="text-4xl font-bold">#{orders.length + 1}</p>
+            <p className="mt-2">Merken Sie sich diese Nummer</p>
+          </div>
+          
+          <p className="text-gray-700 mb-6">Teilen Sie dem Kunden die Bestellnummer mit, damit er den Status seiner Bestellung verfolgen kann.</p>
+          
+          <button 
+            onClick={handleFinishOrder}
+            className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors transform hover:scale-105"
+          >
+            Neue Bestellung erfassen
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Maker View Component
+const MakerView = ({ orders, onUpdateStatus, selectedOrder, onSelectOrder, showNotification }) => {
+  const [selectedStation, setSelectedStation] = useState(1);
+  
+  // Filter orders for the selected station
+  const stationOrders = orders.filter(order => order.station === selectedStation);
+  
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold text-emerald-800 mb-6 text-center">Herstellerbereich - Station {selectedStation}</h2>
+      
+      <div className="flex justify-center mb-8 space-x-4">
+        {[1, 2, 3].map(station => (
+          <button
+            key={station}
+            onClick={() => setSelectedStation(station)}
+            className={`px-6 py-3 rounded-md transition-colors ${
+              selectedStation === station ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Station {station}
+          </button>
+        ))}
+      </div>
+      
+      {stationOrders.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {stationOrders.map(order => (
+            <div 
+              key={order.id} 
+              className={`bg-white rounded-lg shadow-md p-6 cursor-pointer transition-transform hover:scale-105 ${
+                selectedOrder?.id === order.id ? 'ring-2 ring-emerald-500' : ''
+              }`}
+              onClick={() => onSelectOrder(order)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-semibold">Bestellung #{order.id}</h3>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  order.status === 'queued' ? 'bg-yellow-100 text-yellow-800' :
+                  order.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                  'bg-green-100 text-green-800'
+                }`}>
+                  {order.status === 'queued' ? 'In Warteschlange' :
+                   order.status === 'in-progress' ? 'In Bearbeitung' : 'Fertig'}
+                </span>
+              </div>
+              
+              <p className="text-gray-700 mb-2"><span className="font-semibold">Kunde:</span> {order.customerName}</p>
+              <p className="text-gray-700 mb-4"><span className="font-semibold">Bestellzeit:</span> {new Date(order.createdAt).toLocaleTimeString()}</p>
+              
+              <div className="mb-4">
+                <h4 className="font-semibold text-emerald-700 mb-2">Zutaten:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {order.items.map((item, index) => (
+                    <li key={index} className="text-gray-600">{item}</li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className="flex justify-between pt-4 border-t border-gray-200">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStatus(order.id, 'in-progress');
+                    onSelectOrder(order);
+                    showNotification(`Bestellung #${order.id} in Bearbeitung`, 'success');
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm transition-colors"
+                >
+                  In Bearbeitung
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStatus(order.id, 'ready');
+                    onSelectOrder(order);
+                    showNotification(`Bestellung #${order.id} fertiggestellt`, 'success');
+                  }}
+                  className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm transition-colors"
+                >
+                  Fertigstellen
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <p className="text-gray-600 text-lg">Momentan gibt es keine Bestellungen für diese Station.</p>
+          <p className="text-gray-500 mt-2">Bitte wählen Sie eine andere Station oder warten Sie auf neue Bestellungen.</p>
+        </div>
+      )}
+      
+      {selectedOrder && (
+        <div className="mt-8 bg-white rounded-lg shadow-md p-6 animate-fade-in">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Aktuelle Bestellung</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold mb-2">Zutaten</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {selectedOrder.items.map((item, index) => (
+                  <li key={index} className="text-gray-600">{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">Zubereitungshinweise</h4>
+              <p className="text-gray-600">
+                Bitte backen Sie den Crêpe goldbraun und falten Sie ihn ordentlich. 
+                Achten Sie darauf, dass alle Zutaten frisch und in guter Qualität sind.
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-between">
+            <button 
+              onClick={() => {
+                onUpdateStatus(selectedOrder.id, 'in-progress');
+                showNotification(`Bestellung #${selectedOrder.id} in Bearbeitung`, 'success');
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              In Bearbeitung
+            </button>
+            <button 
+              onClick={() => {
+                onUpdateStatus(selectedOrder.id, 'ready');
+                showNotification(`Bestellung #${selectedOrder.id} fertiggestellt`, 'success');
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Fertigstellen
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Owner View Component
+const OwnerView = ({ orders, users, totalRevenue, ordersToday, averageWaitTime, showNotification }) => {
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  return (
+    <div className="max-w-6xl mx-auto">
+      <h2 className="text-3xl font-bold text-emerald-800 mb-6 text-center">Owner Dashboard</h2>
+      
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button 
+          onClick={() => setActiveTab('orders')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'orders' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Bestellungen
+        </button>
+        <button 
+          onClick={() => setActiveTab('users')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'users' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Benutzer
+        </button>
+        <button 
+          onClick={() => setActiveTab('analytics')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'analytics' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Analysen
+        </button>
+      </div>
+      
+      {/* Orders Tab */}
+      {activeTab === 'orders' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Aktuelle Bestellungen</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-2 text-left">Bestellnummer</th>
+                  <th className="px-4 py-2 text-left">Kunde</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Uhrzeit</th>
+                  <th className="px-4 py-2 text-right">Preis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(order => (
+                  <tr key={order.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">#{order.id}</td>
+                    <td className="px-4 py-3">{order.customerName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        order.status === 'queued' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {order.status === 'queued' ? 'In Warteschlange' :
+                         order.status === 'in-progress' ? 'In Bearbeitung' : 'Fertig'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{new Date(order.createdAt).toLocaleTimeString()}</td>
+                    <td className="px-4 py-3 text-right">{(order.price || 0).toFixed(2)} €</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Benutzerverwaltung</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-2 text-left">Name</th>
+                  <th className="px-4 py-2 text-left">Email</th>
+                  <th className="px-4 py-2 text-left">Rolle</th>
+                  <th className="px-4 py-2 text-right">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{user.name}</td>
+                    <td className="px-4 py-3">{user.email}</td>
+                    <td className="px-4 py-3 capitalize">{user.role}</td>
+                    <td className="px-4 py-3 text-right">
+                      <select 
+                        className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        defaultValue={user.role}
+                        onChange={(e) => {
+                          showNotification(`Rolle von ${user.name} geändert`, 'success');
+                        }}
+                      >
+                        <option value="waiter">Kassierer</option>
+                        <option value="maker">Hersteller</option>
+                        <option value="owner">Owner</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold text-emerald-700 mb-2">Neuen Benutzer hinzufügen</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input type="text" placeholder="Name" className="px-3 py-2 border border-gray-300 rounded-md" />
+              <input type="email" placeholder="Email" className="px-3 py-2 border border-gray-300 rounded-md" />
+              <select className="px-3 py-2 border border-gray-300 rounded-md">
+                <option value="">Rolle auswählen</option>
+                <option value="waiter">Kassierer</option>
+                <option value="maker">Hersteller</option>
+                <option value="owner">Owner</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button 
+                className="md:col-span-3 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                onClick={() => showNotification('Benutzer hinzugefügt', 'success')}
+              >
+                Benutzer hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-xl font-semibold text-emerald-700 mb-4">Umsatzanalyse</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Gesamtumsatz</h4>
+                <p className="text-2xl font-bold text-emerald-700">{totalRevenue.toFixed(2)} €</p>
+              </div>
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Bestellungen heute</h4>
+                <p className="text-2xl font-bold text-emerald-700">{ordersToday}</p>
+              </div>
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Durchschnittliche Wartezeit</h4>
+                <p className="text-2xl font-bold text-emerald-700">{averageWaitTime.toFixed(1)} Min</p>
+              </div>
+            </div>
+            
+            {/* Simple chart visualization */}
+            <div className="h-64 bg-gray-50 rounded-lg p-4 relative">
+              <div className="absolute bottom-0 left-0 right-0 h-56 flex items-end justify-around">
+                {[4, 6, 5, 8, 7, 10, 9].map((value, index) => (
+                  <div key={index} className="w-8 bg-emerald-500 rounded-t" style={{ height: `${value * 10}px` }}></div>
+                ))}
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-10 flex justify-around items-center text-xs text-gray-500">
+                <span>Mo</span>
+                <span>Di</span>
+                <span>Mi</span>
+                <span>Do</span>
+                <span>Fr</span>
+                <span>Sa</span>
+                <span>So</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold text-emerald-700 mb-4">Beliebteste Crêpes</h3>
+              
+              <div className="space-y-4">
+                {['Classic Nutella', 'Savory Ham & Cheese', 'Berry Delight', 'Green Tea Matcha', 'Tropical Dream'].map((crêpe, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-1/4">{crêpe}</div>
+                    <div className="flex-grow mx-2">
+                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full" 
+                          style={{ width: `${(index + 1) * 15}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <button class="text-red-500 ml-2 remove-item-btn" data-index="${index}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
+                    <div className="w-12 text-right">{(index + 1) * 15}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold text-emerald-700 mb-4">Umsatz nach Tageszeit</h3>
+              
+              <div className="h-64 relative">
+                <div className="absolute inset-0 flex items-end justify-around">
+                  {[3, 5, 7, 6, 8, 10, 9, 7].map((value, index) => (
+                    <div key={index} className="w-8 bg-red-500 rounded-t" style={{ height: `${value * 10}px` }}></div>
+                  ))}
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 h-10 flex justify-around items-center text-xs text-gray-500">
+                  <span>08:00</span>
+                  <span>10:00</span>
+                  <span>12:00</span>
+                  <span>14:00</span>
+                  <span>16:00</span>
+                  <span>18:00</span>
+                  <span>20:00</span>
+                  <span>22:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
-                currentOrderItems.appendChild(itemElement);
-            });
+// Admin View Component
+const AdminView = ({ orders, users, totalRevenue, ordersToday, averageWaitTime, predefinedCrêpes, showNotification }) => {
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  return (
+    <div className="max-w-6xl mx-auto">
+      <h2 className="text-3xl font-bold text-emerald-800 mb-6 text-center">Admin Dashboard</h2>
+      
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button 
+          onClick={() => setActiveTab('orders')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'orders' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Bestellungen
+        </button>
+        <button 
+          onClick={() => setActiveTab('users')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'users' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Benutzer
+        </button>
+        <button 
+          onClick={() => setActiveTab('analytics')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'analytics' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          Analysen
+        </button>
+        <button 
+          onClick={() => setActiveTab('system')} 
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'system' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500'
+          }`}
+        >
+          System
+        </button>
+      </div>
+      
+      {/* Orders Tab */}
+      {activeTab === 'orders' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Alle Bestellungen</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-2 text-left">Bestellnummer</th>
+                  <th className="px-4 py-2 text-left">Kunde</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Uhrzeit</th>
+                  <th className="px-4 py-2 text-right">Preis</th>
+                  <th className="px-4 py-2 text-right">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(order => (
+                  <tr key={order.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">#{order.id}</td>
+                    <td className="px-4 py-3">{order.customerName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        order.status === 'queued' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {order.status === 'queued' ? 'In Warteschlange' :
+                         order.status === 'in-progress' ? 'In Bearbeitung' : 'Fertig'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{new Date(order.createdAt).toLocaleTimeString()}</td>
+                    <td className="px-4 py-3 text-right">{(order.price || 0).toFixed(2)} €</td>
+                    <td className="px-4 py-3 text-right">
+                      <select 
+                        className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        defaultValue={order.status}
+                        onChange={(e) => {
+                          showNotification(`Status von Bestellung #${order.id} geändert`, 'success');
+                        }}
+                      >
+                        <option value="queued">In Warteschlange</option>
+                        <option value="in-progress">In Bearbeitung</option>
+                        <option value="ready">Fertig</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Benutzerverwaltung</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-2 text-left">Name</th>
+                  <th className="px-4 py-2 text-left">Email</th>
+                  <th className="px-4 py-2 text-left">Rolle</th>
+                  <th className="px-4 py-2 text-right">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{user.name}</td>
+                    <td className="px-4 py-3">{user.email}</td>
+                    <td className="px-4 py-3 capitalize">{user.role}</td>
+                    <td className="px-4 py-3 text-right">
+                      <select 
+                        className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        defaultValue={user.role}
+                        onChange={(e) => {
+                          showNotification(`Rolle von ${user.name} geändert`, 'success');
+                        }}
+                      >
+                        <option value="waiter">Kassierer</option>
+                        <option value="maker">Hersteller</option>
+                        <option value="owner">Owner</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold text-emerald-700 mb-2">Neuen Benutzer hinzufügen</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input type="text" placeholder="Name" className="px-3 py-2 border border-gray-300 rounded-md" />
+              <input type="email" placeholder="Email" className="px-3 py-2 border border-gray-300 rounded-md" />
+              <select className="px-3 py-2 border border-gray-300 rounded-md">
+                <option value="">Rolle auswählen</option>
+                <option value="waiter">Kassierer</option>
+                <option value="maker">Hersteller</option>
+                <option value="owner">Owner</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button 
+                className="md:col-span-3 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                onClick={() => showNotification('Benutzer hinzugefügt', 'success')}
+              >
+                Benutzer hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-xl font-semibold text-emerald-700 mb-4">Umsatzanalyse</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Gesamtumsatz</h4>
+                <p className="text-2xl font-bold text-emerald-700">{totalRevenue.toFixed(2)} €</p>
+              </div>
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Bestellungen heute</h4>
+                <p className="text-2xl font-bold text-emerald-700">{ordersToday}</p>
+              </div>
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <h4 className="text-sm text-gray-500">Durchschnittliche Wartezeit</h4>
+                <p className="text-2xl font-bold text-emerald-700">{averageWaitTime.toFixed(1)} Min</p>
+              </div>
+            </div>
+            
+            {/* Simple chart visualization */}
+            <div className="h-64 bg-gray-50 rounded-lg p-4 relative">
+              <div className="absolute bottom-0 left-0 right-0 h-56 flex items-end justify-around">
+                {[4, 6, 5, 8, 7, 10, 9].map((value, index) => (
+                  <div key={index} className="w-8 bg-emerald-500 rounded-t" style={{ height: `${value * 10}px` }}></div>
+                ))}
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-10 flex justify-around items-center text-xs text-gray-500">
+                <span>Mo</span>
+                <span>Di</span>
+                <span>Mi</span>
+                <span>Do</span>
+                <span>Fr</span>
+                <span>Sa</span>
+                <span>So</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold text-emerald-700 mb-4">Beliebteste Crêpes</h3>
+              
+              <div className="space-y-4">
+                {['Classic Nutella', 'Savory Ham & Cheese', 'Berry Delight', 'Green Tea Matcha', 'Tropical Dream'].map((crêpe, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-1/4">{crêpe}</div>
+                    <div className="flex-grow mx-2">
+                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full" 
+                          style={{ width: `${(index + 1) * 15}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="w-12 text-right">{(index + 1) * 15}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-semibold text-emerald-700 mb-4">Umsatz nach Tageszeit</h3>
+              
+              <div className="h-64 relative">
+                <div className="absolute inset-0 flex items-end justify-around">
+                  {[3, 5, 7, 6, 8, 10, 9, 7].map((value, index) => (
+                    <div key={index} className="w-8 bg-red-500 rounded-t" style={{ height: `${value * 10}px` }}></div>
+                  ))}
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 h-10 flex justify-around items-center text-xs text-gray-500">
+                  <span>08:00</span>
+                  <span>10:00</span>
+                  <span>12:00</span>
+                  <span>14:00</span>
+                  <span>16:00</span>
+                  <span>18:00</span>
+                  <span>20:00</span>
+                  <span>22:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* System Tab */}
+      {activeTab === 'system' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold text-emerald-700 mb-4">Systemeinstellungen</h3>
+          
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-lg font-semibold text-emerald-700 mb-2">Allgemeine Einstellungen</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 mb-2">Standortname</label>
+                  <input type="text" defaultValue="Crêpe Master Hauptstand" className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-2">Öffnungszeiten</label>
+                  <input type="text" defaultValue="10:00 - 22:00" className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-2">Adresse</label>
+                  <input type="text" defaultValue="Hauptstraße 123, 12345 Stadt" className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-gray-700 mb-2">Telefon</label>
+                  <input type="text" defaultValue="+49 123 456789" className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold text-emerald-700 mb-2">Menüverwaltung</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-2 text-left">Name</th>
+                      <th className="px-4 py-2 text-left">Zutaten</th>
+                      <th className="px-4 py-2 text-right">Preis</th>
+                      <th className="px-4 py-2 text-right">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {predefinedCrêpes.map((crêpe, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3">{crêpe.name}</td>
+                        <td className="px-4 py-3">{crêpe.ingredients.join(', ')}</td>
+                        <td className="px-4 py-3 text-right">{crêpe.price.toFixed(2)} €</td>
+                        <td className="px-4 py-3 text-right">
+                          <button className="text-emerald-600 hover:text-emerald-800 mr-2" onClick={() => showNotification(`Crêpe "${crêpe.name}" bearbeiten`, 'success')}>Bearbeiten</button>
+                          <button className="text-red-600 hover:text-red-800" onClick={() => showNotification(`Crêpe "${crêpe.name}" löschen`, 'success')}>Löschen</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="mt-4">
+                <h5 className="text-md font-semibold text-emerald-700 mb-2">Neue Crêpe hinzufügen</h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="text" placeholder="Name" className="px-3 py-2 border border-gray-300 rounded-md" />
+                  <input type="text" placeholder="Zutaten (kommagetrennt)" className="px-3 py-2 border border-gray-300 rounded-md" />
+                  <input type="number" placeholder="Preis" step="0.1" className="px-3 py-2 border border-gray-300 rounded-md" />
+                  <button 
+                    className="md:col-span-3 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                    onClick={() => showNotification('Crêpe hinzugefügt', 'success')}
+                  >
+                    Crêpe hinzufügen
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button 
+                className="px-6 py-3 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                onClick={() => showNotification('Einstellungen gespeichert', 'success')}
+              >
+                Änderungen speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
-            // Add event listeners to remove buttons
-            document.querySelectorAll('.remove-item-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const index = parseInt(e.currentTarget.getAttribute('data-index'));
-                    currentOrder.splice(index, 1);
-                    updateCurrentOrderDisplay();
-                });
-            });
-
-            // Update total
-            orderTotal.textContent = `€${total.toFixed(2)}`;
-        }
-
-        // Submit order (waiter)
-        function submitOrder() {
-            if (currentOrder.length === 0) {
-                alert('Bitte fügen Sie Artikel zur Bestellung hinzu');
-                return;
-            }
-
-            // In a real app, this would save to Firebase
-            showLoading();
-
-            setTimeout(() => {
-                hideLoading();
-
-                // Generate random order number for demo
-                const orderNum = 'CR' + Math.floor(10000 + Math.random() * 90000);
-
-                // Show confirmation
-                confirmationOrderNumber.textContent = orderNum;
-                showOrderConfirmationModal();
-
-                // Reset current order
-                currentOrder = [];
-                updateCurrentOrderDisplay();
-                customerNotes.value = '';
-
-                // Add to active orders (for demo)
-                const newOrder = {
-                    id: orderNum,
-                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    status: 'Wartend',
-                    items: currentOrder.map
-</html>
+export default App;
